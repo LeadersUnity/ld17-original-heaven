@@ -68,13 +68,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be5d352f0caead42902e059d522f665, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _futtobiPower: 30
-  _startDelaySeconds: 0.1
-  _durationFrameCount: 1
-  _stopSeconds: 2
-  _effect: {fileID: 988804008504485901}
-  _sfx: {fileID: 1771889397451215096}
-  _collider: {fileID: 7277394958853804174}
+  explosivePower: 50
+  bombDelaySeconds: 0.1
+  durationFrameCount: 1
+  stopSeconds: 2
+  effect: {fileID: 417761080263594739, guid: 7800b8f6b712bfe49bd663eeb3ebe1e4, type: 3}
+  sfx: {fileID: 1771889397451215096}
+  bombCollider: {fileID: 7277394958853804174}
 --- !u!82 &1771889397451215096
 AudioSource:
   m_ObjectHideFlags: 0
@@ -243,10 +243,5 @@ PrefabInstance:
 --- !u!4 &988804008504485890 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 417761080263594748, guid: 7800b8f6b712bfe49bd663eeb3ebe1e4, type: 3}
-  m_PrefabInstance: {fileID: 609357575577418494}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &988804008504485901 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 417761080263594739, guid: 7800b8f6b712bfe49bd663eeb3ebe1e4, type: 3}
   m_PrefabInstance: {fileID: 609357575577418494}
   m_PrefabAsset: {fileID: 0}

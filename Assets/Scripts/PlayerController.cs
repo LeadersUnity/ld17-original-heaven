@@ -27,24 +27,25 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private float verticalLookMax = 60f;
 
-    [Header("カメラズーム設定")]
-    [Tooltip("カメラズームの感度")]
-    [SerializeField]
-    private float zoomSpeed = 5.0f;
+    // [Header("カメラズーム設定")]  // ★削除: カメラズーム設定のヘッダーも不要に
+    // [Tooltip("カメラズームの感度")]
+    // [SerializeField]
+    // private float zoomSpeed = 5.0f;
 
-    [Tooltip("カメラの最小ズーム距離 (プレイヤーに最も近い距離)")]
-    [SerializeField]
-    private float minZoomDistance = 1.0f;
+    // [Tooltip("カメラの最小ズーム距離 (プレイヤーに最も近い距離)")]
+    // [SerializeField]
+    // private float minZoomDistance = 1.0f;
 
-    [Tooltip("カメラの最大ズーム距離 (プレイヤーから最も遠い距離)")]
-    [SerializeField]
-    private float maxZoomDistance = 10.0f;
+    // [Tooltip("カメラの最大ズーム距離 (プレイヤーから最も遠い距離)")]
+    // [SerializeField]
+    // private float maxZoomDistance = 10.0f;
 
     private CharacterController characterController;
     private Vector3 moveDirection = Vector3.zero;
     private float rotationX = 0; // 垂直視点回転の現在の角度（ワールドX軸基準）
     private float rotationY = 0; // 水平視点回転の現在の角度（ワールドY軸基準）
-    private float currentZoomDistance;
+
+    // private float currentZoomDistance; // ★削除: ズーム距離は不要に
     public Vector3 firstPosition = new Vector3(0, 0, 0);
     public Vector3 firstRotation = new Vector3(0, 0, 0);
 
@@ -53,24 +54,21 @@ public class PlayerController : MonoBehaviour
         this.transform.position = firstPosition;
         this.transform.eulerAngles = firstRotation; // 初期回転を設定
         characterController = GetComponent<CharacterController>();
-        // カーソルをロックして非表示にする
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
 
-        // カメラの初期ズーム距離を設定
-        if (Camera.main != null)
-        {
-            currentZoomDistance = -Camera.main.transform.localPosition.z;
-            currentZoomDistance = Mathf.Clamp(
-                currentZoomDistance,
-                minZoomDistance,
-                maxZoomDistance
-            );
-        }
-        else
-        {
-            currentZoomDistance = (minZoomDistance + maxZoomDistance) / 2;
-        }
+        // カメラの初期ズーム距離を設定 (この部分も削除)
+        // if (Camera.main != null)
+        // {
+        //     currentZoomDistance = -Camera.main.transform.localPosition.z;
+        //     currentZoomDistance = Mathf.Clamp(
+        //         currentZoomDistance,
+        //         minZoomDistance,
+        //         maxZoomDistance
+        //     );
+        // }
+        // else
+        // {
+        //     currentZoomDistance = (minZoomDistance + maxZoomDistance) / 2;
+        // }
 
         // 初期回転をワールド基準のrotationX, rotationYに反映させる
         rotationX = transform.eulerAngles.x;
@@ -81,7 +79,7 @@ public class PlayerController : MonoBehaviour
     {
         HandleMovement();
         HandleCameraLook(); // 矢印キーによる視点移動を有効化
-        HandleCameraZoom();
+        // HandleCameraZoom(); // ★削除: カメラズーム操作は不要に
     }
 
     /// プレイヤーの移動を処理
@@ -140,40 +138,25 @@ public class PlayerController : MonoBehaviour
         transform.rotation = Quaternion.Euler(rotationX, rotationY, 0);
     }
 
-    /// カメラのズーム操作を処理
-    /// マウスホイールのスクロールに対応
-    private void HandleCameraZoom()
-    {
-        if (Camera.main == null)
-        {
-            return;
-        }
+    // /// カメラのズーム操作を処理  // Bombの操作機能のためメソッド全体を削除
+    // /// マウスホイールのスクロールに対応
+    // private void HandleCameraZoom()
+    // {
+    //     if (Camera.main == null)
+    //     {
+    //         return;
+    //     }
 
-        float scrollInput = Input.GetAxis("Mouse ScrollWheel");
+    //     float scrollInput = Input.GetAxis("Mouse ScrollWheel");
 
-        currentZoomDistance -= scrollInput * zoomSpeed;
-        currentZoomDistance = Mathf.Clamp(currentZoomDistance, minZoomDistance, maxZoomDistance);
+    //     currentZoomDistance -= scrollInput * zoomSpeed;
+    //     currentZoomDistance = Mathf.Clamp(currentZoomDistance, minZoomDistance, maxZoomDistance);
 
-        Vector3 cameraLocalPos = Camera.main.transform.localPosition;
-        Camera.main.transform.localPosition = new Vector3(
-            cameraLocalPos.x,
-            cameraLocalPos.y,
-            -currentZoomDistance
-        );
-    }
-
-    // デバッグ用：Escキーでカーソルを解除
-    void OnApplicationFocus(bool hasFocus)
-    {
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
-        else if (hasFocus && Cursor.lockState == CursorLockMode.None)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
-    }
+    //     Vector3 cameraLocalPos = Camera.main.transform.localPosition;
+    //     Camera.main.transform.localPosition = new Vector3(
+    //         cameraLocalPos.x,
+    //         cameraLocalPos.y,
+    //         -currentZoomDistance
+    //     );
+    // }
 }
