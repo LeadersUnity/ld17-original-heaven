@@ -94,6 +94,6 @@ public class ExplosionController : MonoBehaviour
 
         var direction = (other.transform.position - transform.position).normalized;
 
-        rigidBody.AddForce(direction * explosivePower, ForceMode.VelocityChange);
+        rigidBody.AddForce(direction * explosivePower, ForceMode.Impulse);
     }
 }
