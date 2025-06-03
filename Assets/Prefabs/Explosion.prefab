@@ -68,7 +68,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be5d352f0caead42902e059d522f665, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  explosivePower: 50
+  explosivePower: 100
   bombDelaySeconds: 0.1
   durationFrameCount: 1
   stopSeconds: 2
