@@ -1,12 +1,11 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ExplosionController : MonoBehaviour
 {
     [Header("爆風に当たったときに吹っ飛ぶ力の強さ")]
     [SerializeField]
-    private float explosivePower;
+    private float explosivePower = 500f; // デフォルト値を明示するのも良い
 
     [Header("爆風の判定が実際に発生するまでの遅延時間")]
     [SerializeField]
@@ -52,11 +51,10 @@ public class ExplosionController : MonoBehaviour
 
     private IEnumerator ExplodeCoroutine()
     {
-        var delayCount = Mathf.Max(0, bombDelaySeconds);
-        while (delayCount > 0)
+        float delay = Mathf.Max(0, bombDelaySeconds);
+        if (delay > 0)
         {
-            yield return new WaitForFixedUpdate();
-            delayCount -= Time.fixedDeltaTime;
+            yield return new WaitForSeconds(delay); // FixedUpdateベースからSecondsへ変更も検討可
         }
 
         if (bombCollider != null)
@@ -64,7 +62,7 @@ public class ExplosionController : MonoBehaviour
 
         for (var i = 0; i < durationFrameCount; i++)
         {
-            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate(); // 物理演算に影響を与えるためFixedUpdateが適切
         }
 
         if (bombCollider != null)
@@ -87,13 +85,12 @@ public class ExplosionController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        var rigidBody = other.GetComponentInParent<Rigidbody>();
+        Rigidbody rigidBody = other.GetComponentInParent<Rigidbody>(); // GetComponentInParentが良い場合もある
 
         if (rigidBody == null)
             return;
 
-        var direction = (other.transform.position - transform.position).normalized;
-
+        Vector3 direction = (other.transform.position - transform.position).normalized;
         rigidBody.AddForce(direction * explosivePower, ForceMode.Impulse);
     }
 }

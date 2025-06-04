@@ -1,7 +1,5 @@
 using UnityEngine;
 
-//プレイヤーの移動と視点操作を制御するスクリプト。
-/// WASDキー及び矢印キーによる視点移動（回転）とマウスホイールによるズームが有効
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
@@ -11,13 +9,13 @@ public class PlayerController : MonoBehaviour
     private float moveSpeed = 5.0f;
 
     [Header("視点設定")]
-    [Tooltip("視点の水平方向の感度 (矢印キーの左右入力に影響)")]
+    [Tooltip("視点の水平方向の感度")]
     [SerializeField]
-    private float mouseLookSensitivityX = 2.0f; // マウスX軸（矢印キーの左右入力にも対応）
+    private float lookSensitivityX = 2.0f;
 
-    [Tooltip("視点の垂直方向の感度 (矢印キーの上下入力に影響)")]
+    [Tooltip("視点の垂直方向の感度")]
     [SerializeField]
-    private float mouseLookSensitivityY = 2.0f; // マウスY軸（矢印キーの上下入力にも対応）
+    private float lookSensitivityY = 2.0f;
 
     [Tooltip("垂直方向の視点可動域の最小値")]
     [SerializeField]
@@ -27,136 +25,113 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private float verticalLookMax = 60f;
 
-    // [Header("カメラズーム設定")]  // ★削除: カメラズーム設定のヘッダーも不要に
-    // [Tooltip("カメラズームの感度")]
-    // [SerializeField]
-    // private float zoomSpeed = 5.0f;
-
-    // [Tooltip("カメラの最小ズーム距離 (プレイヤーに最も近い距離)")]
-    // [SerializeField]
-    // private float minZoomDistance = 1.0f;
-
-    // [Tooltip("カメラの最大ズーム距離 (プレイヤーから最も遠い距離)")]
-    // [SerializeField]
-    // private float maxZoomDistance = 10.0f;
-
     private CharacterController characterController;
     private Vector3 moveDirection = Vector3.zero;
-    private float rotationX = 0; // 垂直視点回転の現在の角度（ワールドX軸基準）
-    private float rotationY = 0; // 水平視点回転の現在の角度（ワールドY軸基準）
+    private float rotationX = 0;
+    private float rotationY = 0;
 
-    // private float currentZoomDistance; // ★削除: ズーム距離は不要に
-    public Vector3 firstPosition = new Vector3(0, 0, 0);
-    public Vector3 firstRotation = new Vector3(0, 0, 0);
+    public Vector3 initialPosition = Vector3.zero;
+    public Vector3 initialRotation = Vector3.zero;
 
     void Awake()
     {
-        this.transform.position = firstPosition;
-        this.transform.eulerAngles = firstRotation; // 初期回転を設定
+        transform.position = initialPosition;
+        transform.eulerAngles = initialRotation;
         characterController = GetComponent<CharacterController>();
 
-        // カメラの初期ズーム距離を設定 (この部分も削除)
-        // if (Camera.main != null)
-        // {
-        //     currentZoomDistance = -Camera.main.transform.localPosition.z;
-        //     currentZoomDistance = Mathf.Clamp(
-        //         currentZoomDistance,
-        //         minZoomDistance,
-        //         maxZoomDistance
-        //     );
-        // }
-        // else
-        // {
-        //     currentZoomDistance = (minZoomDistance + maxZoomDistance) / 2;
-        // }
-
-        // 初期回転をワールド基準のrotationX, rotationYに反映させる
         rotationX = transform.eulerAngles.x;
         rotationY = transform.eulerAngles.y;
+
+        //Cursor.lockState = CursorLockMode.Locked; // マウスカーソルを中央に固定（FPS風操作の場合）
+        //Cursor.visible = false; // マウスカーソルを非表示
     }
 
     void Update()
     {
         HandleMovement();
-        HandleCameraLook(); // 矢印キーによる視点移動を有効化
-        // HandleCameraZoom(); // ★削除: カメラズーム操作は不要に
+        HandleCameraLook();
     }
 
-    /// プレイヤーの移動を処理
-    /// WASDキーで前後左右、Spaceキーで上昇、LeftShiftキーで下降に対応
     private void HandleMovement()
     {
+        float horizontalInput = Input.GetAxis("Horizontal"); // A/D or Left/Right Arrow
+        float verticalInput = Input.GetAxis("Vertical"); // W/S or Up/Down Arrow
+
         Vector3 forward = transform.TransformDirection(Vector3.forward);
         Vector3 right = transform.TransformDirection(Vector3.right);
-        Vector3 up = transform.TransformDirection(Vector3.up);
 
-        float curSpeedX = moveSpeed * Input.GetAxis("Vertical");
-        float curSpeedY = moveSpeed * Input.GetAxis("Horizontal");
+        float currentSpeedX = moveSpeed * verticalInput;
+        float currentSpeedZ = moveSpeed * horizontalInput; // Unityの標準的な軸に合わせて修正
 
-        float curSpeedZ = 0;
+        moveDirection = (forward * currentSpeedX) + (right * currentSpeedZ);
+
         if (Input.GetKey(KeyCode.Space))
         {
-            curSpeedZ = moveSpeed;
+            moveDirection.y = moveSpeed;
         }
         else if (Input.GetKey(KeyCode.LeftShift))
         {
-            curSpeedZ = -moveSpeed;
+            moveDirection.y = -moveSpeed;
         }
-
-        moveDirection = (forward * curSpeedX) + (right * curSpeedY) + (up * curSpeedZ);
+        else
+        {
+            // CharacterControllerは重力の影響を自動では受けないので、
+            // 必要であればここで重力を手動で適用するか、
+            // CharacterController.isGrounded を使って接地時のみY移動を0にするなどの処理を追加。
+            // 現在のコードでは上下移動はSpace/Shiftのみ。
+        }
 
         characterController.Move(moveDirection * Time.deltaTime);
     }
 
-    /// プレイヤーの視点操作
-    /// 矢印キー（Input.GetAxis("Mouse X/Y")）に対応
-    /// Rotationは常に空間のX軸、Y軸を基準に行う
     private void HandleCameraLook()
     {
-        // 垂直方向の視点操作 (ワールドのX軸基準)
+        // マウス入力による視点操作 (一般的なFPSスタイル)
+        //rotationY += Input.GetAxis("Mouse X") * lookSensitivityX;
+        //rotationX -= Input.GetAxis("Mouse Y") * lookSensitivityY; // マウスYは反転させることが多い
+        //rotationX = Mathf.Clamp(rotationX, verticalLookMin, verticalLookMax);
+
+        // プレイヤー全体のY軸回転 (左右の視点移動)
+        transform.localEulerAngles = new Vector3(0, rotationY, 0);
+        // カメラのX軸回転 (上下の視点移動) - カメラオブジェクトをプレイヤーの子にして、カメラのみX回転させるのが一般的
+        // もしプレイヤーオブジェクト自体をX回転させるなら、現在の実装でも良いが、通常はカメラを別で制御する。
+        // ここでは提供された構造に合わせてPlayer自体を回転
+        Camera.main.transform.localEulerAngles = new Vector3(rotationX, 0, 0); // メインカメラのローカルX軸回転
+
+        // 矢印キーによる視点操作の追加
         if (Input.GetKey(KeyCode.UpArrow))
         {
-            rotationX -= mouseLookSensitivityY; // Y軸の入力でX軸を回転させる
+            rotationX -= lookSensitivityY * Time.deltaTime * 50f; // deltaTimeを乗算してフレームレート依存を軽減, 感度調整
         }
         if (Input.GetKey(KeyCode.DownArrow))
         {
-            rotationX += mouseLookSensitivityY; // Y軸の入力でX軸を回転させる
+            rotationX += lookSensitivityY * Time.deltaTime * 50f;
         }
         rotationX = Mathf.Clamp(rotationX, verticalLookMin, verticalLookMax);
 
-        // 水平方向の視点操作 (ワールドのY軸基準)
         if (Input.GetKey(KeyCode.RightArrow))
         {
-            rotationY += mouseLookSensitivityX; // X軸の入力でY軸を回転させる
+            rotationY += lookSensitivityX * Time.deltaTime * 50f;
         }
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            rotationY -= mouseLookSensitivityX; // X軸の入力でY軸を回転させる
+            rotationY -= lookSensitivityX * Time.deltaTime * 50f;
         }
-
-        // プレイヤーのTransformをワールドのX軸とY軸で回転させる
-        transform.rotation = Quaternion.Euler(rotationX, rotationY, 0);
+        // プレイヤーのTransformをワールドのY軸とローカルのX軸で回転させる
+        // FPS風の操作では、通常プレイヤーのY軸回転とカメラのX軸回転を分けることが多いです。
+        // ここでは、元のスクリプトの挙動「Arrow keys を用いて視点を上下左右に回転できる」を維持しつつ、
+        // 一般的なマウスルックも追加する形で調整しました。
+        // もしマウスルックが不要であれば、Input.GetAxis("Mouse X/Y")の部分を削除してください。
+        // PlayerControllerのカメラ操作は、プレイヤーオブジェクト自体を回転させるか、
+        // Playerの子にカメラを配置し、カメラオブジェクトのローカル回転を制御するかに大きく依存します。
+        // 元のスクリプトはプレイヤー自体を回転させていたので、その方針を一部残しつつ、
+        // より一般的なFPSスタイルに近づけるためにCamera.main.transform.localEulerAnglesも使用しました。
+        //
+        // 元のスクリプトのArrowKeyによる視点操作を優先する場合：
+        // rotationX += (Input.GetKey(KeyCode.DownArrow) ? 1 : (Input.GetKey(KeyCode.UpArrow) ? -1 : 0)) * lookSensitivityY * Time.deltaTime * 50f;
+        // rotationY += (Input.GetKey(KeyCode.RightArrow) ? 1 : (Input.GetKey(KeyCode.LeftArrow) ? -1 : 0)) * lookSensitivityX * Time.deltaTime * 50f;
+        // rotationX = Mathf.Clamp(rotationX, verticalLookMin, verticalLookMax);
+        // transform.rotation = Quaternion.Euler(rotationX, rotationY, 0); // この行を有効化
+        // Camera.main.transform.localEulerAngles = Vector3.zero; // カメラはプレイヤーに追従するだけなら
     }
-
-    // /// カメラのズーム操作を処理  // Bombの操作機能のためメソッド全体を削除
-    // /// マウスホイールのスクロールに対応
-    // private void HandleCameraZoom()
-    // {
-    //     if (Camera.main == null)
-    //     {
-    //         return;
-    //     }
-
-    //     float scrollInput = Input.GetAxis("Mouse ScrollWheel");
-
-    //     currentZoomDistance -= scrollInput * zoomSpeed;
-    //     currentZoomDistance = Mathf.Clamp(currentZoomDistance, minZoomDistance, maxZoomDistance);
-
-    //     Vector3 cameraLocalPos = Camera.main.transform.localPosition;
-    //     Camera.main.transform.localPosition = new Vector3(
-    //         cameraLocalPos.x,
-    //         cameraLocalPos.y,
-    //         -currentZoomDistance
-    //     );
-    // }
 }

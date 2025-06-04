@@ -23,11 +23,8 @@ public class BuildingBlock : MonoBehaviour
     private Renderer blockRenderer;
     private static HashSet<Rigidbody> processedRigidbodies = new HashSet<Rigidbody>();
 
-    // --- ここから追加・変更 ---
-    private bool hasBeenScored = false; // このブロックがスコア処理されたか
-    private bool hasBeenCountedForTask1 = false; // このブロックがタスク1の破壊としてカウントされたか
-
-    // --- ここまで追加・変更 ---
+    private bool hasBeenScored = false;
+    private bool hasBeenCountedForTask1 = false;
 
     void Awake()
     {
@@ -49,36 +46,37 @@ public class BuildingBlock : MonoBehaviour
         ConnectToNeighbors();
         processedRigidbodies.Add(rb);
 
-        // --- ここから追加 ---
-        if (GameManager.Instance != null)
+        // GameManagerのInitializeGameでブロック数をカウントするため、ここでの個別登録は不要。
+        // if (GameManager.Instance != null)
+        // {
+        //     GameManager.Instance.RegisterBlock(); // この行を削除またはコメントアウト
+        // }
+        // else
+        // {
+        //     Debug.LogError("GameManager instance not found. Cannot register block.", gameObject);
+        // }
+        if (GameManager.Instance == null) // GameManagerの存在チェックは残しても良い
         {
-            GameManager.Instance.RegisterBlock();
+            Debug.LogError(
+                "GameManager instance not found during BuildingBlock.Start(). Game logic might be affected.",
+                gameObject
+            );
         }
-        else
-        {
-            Debug.LogError("GameManager instance not found. Cannot register block.");
-        }
-        // --- ここまで追加 ---
     }
 
     void Update()
     {
-        // Y座標がfallLimitYを下回ったら破壊としてカウントし、オブジェクトを破棄
         if (transform.position.y < fallLimitY)
         {
-            // --- ここから追加・変更 ---
             if (!hasBeenCountedForTask1 && GameManager.Instance != null)
             {
                 GameManager.Instance.NotifyBlockDestroyed();
                 hasBeenCountedForTask1 = true;
             }
-            // スコアは地面/Roadへの接触時のみなので、ここではスコア処理しない
             Destroy(gameObject);
-            // --- ここまで追加・変更 ---
         }
     }
 
-    // --- ここから追加 ---
     void OnCollisionEnter(Collision collision)
     {
         if (GameManager.Instance == null)
@@ -86,36 +84,31 @@ public class BuildingBlock : MonoBehaviour
 
         string contactTag = collision.gameObject.tag;
 
-        // スコア処理 (一度だけ)
         if (!hasBeenScored)
         {
-            if (contactTag == "Ground") // 「基本の地面」のタグを "Ground" と想定
+            if (contactTag == "Ground")
             {
                 GameManager.Instance.AddScore(100);
                 hasBeenScored = true;
             }
-            else if (contactTag == "Road") // 「Roadタグがついた道路」のタグは "Road"
+            else if (contactTag == "Road")
             {
                 GameManager.Instance.AddScore(-50);
                 hasBeenScored = true;
             }
         }
 
-        // タスク1: 破壊カウント (地面またはRoadに接触したら破壊とみなす。一度だけカウント)
         if (!hasBeenCountedForTask1 && (contactTag == "Ground" || contactTag == "Road"))
         {
             GameManager.Instance.NotifyBlockDestroyed();
             hasBeenCountedForTask1 = true;
         }
 
-        // タスク2: Roadに接触したら失敗通知
         if (contactTag == "Road")
         {
             GameManager.Instance.NotifyRoadContact();
         }
     }
-
-    // --- ここまで追加 ---
 
     void SetMaterialBasedOnHardness()
     {
@@ -131,14 +124,7 @@ public class BuildingBlock : MonoBehaviour
             return;
         }
 
-        if (breakForce >= hardnessThreshold)
-        {
-            blockRenderer.material = hardMaterial;
-        }
-        else
-        {
-            blockRenderer.material = softMaterial;
-        }
+        blockRenderer.material = (breakForce >= hardnessThreshold) ? hardMaterial : softMaterial;
     }
 
     void ConnectToNeighbors()
@@ -151,13 +137,11 @@ public class BuildingBlock : MonoBehaviour
                 continue;
 
             Rigidbody connectedRb = hitCollider.attachedRigidbody;
-
             if (connectedRb == null || processedRigidbodies.Contains(connectedRb))
                 continue;
 
             bool alreadyConnected = false;
-            FixedJoint[] existingJoints = GetComponents<FixedJoint>();
-            foreach (FixedJoint joint in existingJoints)
+            foreach (FixedJoint joint in GetComponents<FixedJoint>())
             {
                 if (joint.connectedBody == connectedRb)
                 {
@@ -165,36 +149,33 @@ public class BuildingBlock : MonoBehaviour
                     break;
                 }
             }
+            if (alreadyConnected)
+                continue;
 
-            if (!alreadyConnected)
+            foreach (FixedJoint joint in connectedRb.GetComponents<FixedJoint>())
             {
-                FixedJoint[] otherExistingJoints = connectedRb.GetComponents<FixedJoint>();
-                foreach (FixedJoint joint in otherExistingJoints)
+                if (joint.connectedBody == rb)
                 {
-                    if (joint.connectedBody == rb)
-                    {
-                        alreadyConnected = true;
-                        break;
-                    }
+                    alreadyConnected = true;
+                    break;
                 }
             }
+            if (alreadyConnected)
+                continue;
 
-            if (!alreadyConnected)
+            FixedJoint newJoint = gameObject.AddComponent<FixedJoint>();
+            newJoint.connectedBody = connectedRb;
+
+            BuildingBlock otherBlock = connectedRb.GetComponent<BuildingBlock>();
+            if (otherBlock != null)
             {
-                FixedJoint joint = gameObject.AddComponent<FixedJoint>();
-                joint.connectedBody = connectedRb;
-
-                BuildingBlock otherBlock = connectedRb.GetComponent<BuildingBlock>();
-                if (otherBlock != null)
-                {
-                    joint.breakForce = Mathf.Min(this.breakForce, otherBlock.breakForce);
-                    joint.breakTorque = Mathf.Min(this.breakTorque, otherBlock.breakTorque);
-                }
-                else
-                {
-                    joint.breakForce = this.breakForce;
-                    joint.breakTorque = this.breakTorque;
-                }
+                newJoint.breakForce = Mathf.Min(this.breakForce, otherBlock.breakForce);
+                newJoint.breakTorque = Mathf.Min(this.breakTorque, otherBlock.breakTorque);
+            }
+            else
+            {
+                newJoint.breakForce = this.breakForce;
+                newJoint.breakTorque = this.breakTorque;
             }
         }
     }
