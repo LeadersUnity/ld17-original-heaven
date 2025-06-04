@@ -30,7 +30,7 @@ public class PlayerController : MonoBehaviour
     private float rotationX = 0;
     private float rotationY = 0;
 
-    public Vector3 initialPosition = Vector3.zero;
+    public Vector3 initialPosition = new Vector3(0, 6, -30);
     public Vector3 initialRotation = Vector3.zero;
 
     void Awake()
