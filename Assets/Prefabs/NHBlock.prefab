@@ -147,10 +147,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   connectionRadius: 0.8
-  breakForce: 200
-  breakTorque: 200
+  breakForce: 2000
+  breakTorque: 2000
   hardMaterial: {fileID: 2100000, guid: e92145a9ff4961648b4f1c433874953a, type: 2}
   softMaterial: {fileID: 2100000, guid: a55ed7f4275370943a0a7374e87c9b0e, type: 2}
-  hardnessThreshold: 100
+  hardnessThreshold: 1500
   fallLimitY: -100
   showGizmos: 1
