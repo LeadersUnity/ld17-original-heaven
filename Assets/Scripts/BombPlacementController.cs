@@ -73,6 +73,7 @@ public class BombPlacementController : MonoBehaviour
         if (spawnBombButton != null)
         {
             spawnBombButton.onClick.AddListener(HandleSpawnBombButtonClick);
+            Debug.Log("spawnBombButton.onClick.AddListener(HandleSpawnBombButtonClick);が呼ばれた");
         }
         if (explodeAllBombsButton != null)
         {
@@ -122,6 +123,7 @@ public class BombPlacementController : MonoBehaviour
             DropBomb();
         }
         SpawnBomb();
+        Debug.Log("HandleSpawnBombButtonClick()よりSpawnBomb();が呼ばれた");
     }
 
     public void SpawnBomb()
