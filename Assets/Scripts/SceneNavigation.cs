@@ -13,6 +13,13 @@ public class SceneNavigation : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
+    public void RestartLastPlayedScene()
+    {
+        string sceneNameToLoad = GameManager.Instance.GetLastPlayedSceneName();
+
+        SceneManager.LoadScene(sceneNameToLoad);
+    }
+
     public void ReloadCurrentScene()
     {
         Scene currentScene = SceneManager.GetActiveScene();

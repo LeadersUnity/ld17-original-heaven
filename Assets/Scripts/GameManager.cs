@@ -25,6 +25,9 @@ public class GameManager : MonoBehaviour
 
     private bool gameHasEnded = false;
 
+    [Header("Scene Management")]
+    private string lastPlayedSceneName; // 直前にプレイしたシーン名を保持する変数
+
     void Awake()
     {
         if (Instance == null)
@@ -42,6 +45,7 @@ public class GameManager : MonoBehaviour
     // ゲームプレイシーン開始時に呼ばれることを想定した初期化メソッド
     public void InitializeGame()
     {
+        lastPlayedSceneName = SceneManager.GetActiveScene().name;
         currentScore = 0;
         UpdateScoreUI(); // スコアUIを先にリセット
 
@@ -59,6 +63,11 @@ public class GameManager : MonoBehaviour
 
         UpdateTaskDisplayUI(); // 全ての値を設定後にタスクUIを更新
         Debug.Log("Game initialized: Score and tasks have been reset.");
+    }
+
+    public string GetLastPlayedSceneName()
+    {
+        return lastPlayedSceneName;
     }
 
     void UpdateScoreUI()

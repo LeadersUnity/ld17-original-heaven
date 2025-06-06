@@ -123,13 +123,6 @@ public class BombPlacementController : MonoBehaviour
             bombRb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         }
 
-        // ドラッグ中の爆弾はColliderをTriggerにしない（建物と衝突して止まるようにするため、建物側をKinematicにする）
-        // Collider bombCollider = currentBombInstance.GetComponent<Collider>();
-        // if (bombCollider != null)
-        // {
-        //     // bombCollider.isTrigger = true; // この行は削除またはコメントアウト
-        // }
-
         isDraggingBomb = true;
         Vector3 screenPoint = mainCamera.WorldToScreenPoint(currentBombInstance.transform.position);
         dragOffset =
