@@ -9,10 +9,15 @@ public class BombPlacementController : MonoBehaviour
     [Tooltip("爆弾のプレハブ")]
     public Bomb bombPrefab;
 
-    [Header("ドラッグ設定")]
-    [Tooltip("爆弾のドラッグ移動速度")]
+    [Header("参照")]
+    [Tooltip("プレイヤーのTransform")]
     [SerializeField]
-    private float dragSpeed = 1.0f; // 1.0fでマウスに即時追従。小さい値で滑らかに遅れて追従。
+    private Transform playerTransform;
+
+    [Header("ドラッグ設定")]
+    [Tooltip("ドラッグ時のマウス感度")]
+    [SerializeField]
+    private float dragSensitivity = 0.1f;
 
     [Tooltip("マウスホイールによる爆弾の距離調整速度")]
     [SerializeField]
@@ -35,14 +40,12 @@ public class BombPlacementController : MonoBehaviour
 
     private Bomb currentBombInstance;
     private bool isDraggingBomb = false;
-    private Vector3 dragOffset;
 
     private List<Bomb> placedBombs = new List<Bomb>();
     private Camera mainCamera;
     private const string BOMB_TAG = "Bomb";
     private LayerMask bombLayerMask;
 
-    // *** 改善点: 建物のRigidbodyを一時的に固定するためのリスト ***
     private List<Rigidbody> buildingBlockRigidbodies = new List<Rigidbody>();
     private List<bool> originalKinematicStates = new List<bool>();
     private bool buildingBlocksFrozen = false;
@@ -50,6 +53,22 @@ public class BombPlacementController : MonoBehaviour
     void Awake()
     {
         mainCamera = Camera.main;
+
+        // プレイヤーのTransformを自動で取得
+        if (playerTransform == null)
+        {
+            PlayerController player = FindObjectOfType<PlayerController>();
+            if (player != null)
+            {
+                playerTransform = player.transform;
+            }
+            else
+            {
+                Debug.LogError(
+                    "PlayerControllerが見つかりませんでした。爆弾の親子関係設定ができません。"
+                );
+            }
+        }
 
         if (spawnBombButton != null)
         {
@@ -66,8 +85,12 @@ public class BombPlacementController : MonoBehaviour
     {
         if (isDraggingBomb && currentBombInstance != null)
         {
+            // マウスの右クリックが押されている間だけドラッグ操作を有効にするなどの改良も可能
+            // if(Input.GetMouseButton(1)) // 例：右クリック中のみ操作
+            // {
             HandleBombDrag();
             HandleBombDistanceAdjustment();
+            // }
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -94,23 +117,28 @@ public class BombPlacementController : MonoBehaviour
 
     private void HandleSpawnBombButtonClick()
     {
-        // もし既存の爆弾をドラッグ中に新しい爆弾を生成しようとしたら、まず既存の爆弾をドロップする
         if (isDraggingBomb && currentBombInstance != null)
         {
-            DropBomb(); // これにより UnfreezeBuildingBlocksIfNecessary も呼ばれる
+            DropBomb();
         }
         SpawnBomb();
     }
 
     public void SpawnBomb()
     {
-        // *** 改善点: ドラッグ開始時に建物を固定 ***
         FreezeBuildingBlocks();
 
         Vector3 spawnPosition =
             mainCamera.transform.position + mainCamera.transform.forward * minBombDistance;
 
         currentBombInstance = Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
+
+        // 爆弾をプレイヤーの子にする
+        if (playerTransform != null)
+        {
+            currentBombInstance.transform.SetParent(playerTransform);
+        }
+
         currentBombInstance.gameObject.tag = BOMB_TAG;
         currentBombInstance.gameObject.layer = LayerMask.NameToLayer(BOMB_TAG);
 
@@ -119,17 +147,10 @@ public class BombPlacementController : MonoBehaviour
         {
             bombRb.useGravity = false;
             bombRb.isKinematic = true;
-            // *** 改善点(問題2対策): すり抜け防止のため、Collision Detection Modeを設定 ***
             bombRb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         }
 
         isDraggingBomb = true;
-        Vector3 screenPoint = mainCamera.WorldToScreenPoint(currentBombInstance.transform.position);
-        dragOffset =
-            currentBombInstance.transform.position
-            - mainCamera.ScreenToWorldPoint(
-                new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z)
-            );
     }
 
     private void TrySelectBomb()
@@ -142,10 +163,8 @@ public class BombPlacementController : MonoBehaviour
                 Bomb hitBomb = hit.collider.GetComponent<Bomb>();
                 if (hitBomb != null)
                 {
-                    // *** 改善点: ドラッグ開始時に建物を固定 ***
                     FreezeBuildingBlocks();
 
-                    // リストから削除し、再度追加する処理 (もし再ドラッグを許可する場合)
                     if (placedBombs.Contains(hitBomb))
                     {
                         placedBombs.Remove(hitBomb);
@@ -153,32 +172,23 @@ public class BombPlacementController : MonoBehaviour
                     }
 
                     currentBombInstance = hitBomb;
-                    isDraggingBomb = true;
 
-                    Vector3 screenPoint = mainCamera.WorldToScreenPoint(
-                        currentBombInstance.transform.position
-                    );
-                    dragOffset =
-                        currentBombInstance.transform.position
-                        - mainCamera.ScreenToWorldPoint(
-                            new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z)
-                        );
+                    // 選択した爆弾をプレイヤーの子にする
+                    if (playerTransform != null)
+                    {
+                        currentBombInstance.transform.SetParent(playerTransform);
+                    }
+
+                    isDraggingBomb = true;
 
                     Rigidbody bombRb = currentBombInstance.GetComponent<Rigidbody>();
                     if (bombRb != null)
                     {
                         bombRb.useGravity = false;
                         bombRb.isKinematic = true;
-                        // *** 改善点(問題2対策): すり抜け防止のため、Collision Detection Modeを設定 ***
                         bombRb.collisionDetectionMode =
                             CollisionDetectionMode.ContinuousSpeculative;
                     }
-                    // ドラッグ中の爆弾はColliderをTriggerにしない
-                    // Collider bombCollider = currentBombInstance.GetComponent<Collider>();
-                    // if (bombCollider != null)
-                    // {
-                    //     // bombCollider.isTrigger = true; // この行は削除またはコメントアウト
-                    // }
                 }
             }
         }
@@ -186,27 +196,15 @@ public class BombPlacementController : MonoBehaviour
 
     private void HandleBombDrag()
     {
-        float distance = Vector3.Distance(
-            mainCamera.transform.position,
-            currentBombInstance.transform.position
-        );
-        Vector3 screenPointDepth = mainCamera.WorldToScreenPoint(
-            currentBombInstance.transform.position
-        );
-        Vector3 mouseScreenPosition = new Vector3(
-            Input.mousePosition.x,
-            Input.mousePosition.y,
-            screenPointDepth.z
-        );
+        // マウスのX、Yの移動量を取得
+        float mouseX = Input.GetAxis("Mouse X") * dragSensitivity;
+        float mouseY = Input.GetAxis("Mouse Y") * dragSensitivity;
 
-        Vector3 mouseWorldPosition = mainCamera.ScreenToWorldPoint(mouseScreenPosition);
-        Vector3 targetPosition = mouseWorldPosition + dragOffset;
+        // カメラの右方向ベクトルと上方向ベクトルを基準に移動量を計算
+        Vector3 move = (mainCamera.transform.right * mouseX) + (mainCamera.transform.up * mouseY);
 
-        currentBombInstance.transform.position = Vector3.Lerp(
-            currentBombInstance.transform.position,
-            targetPosition,
-            dragSpeed // dragSpeedが1.0なら即時追従
-        );
+        // 爆弾の位置を更新
+        currentBombInstance.transform.position += move;
     }
 
     private void HandleBombDistanceAdjustment()
@@ -225,14 +223,6 @@ public class BombPlacementController : MonoBehaviour
             newDistance = Mathf.Clamp(newDistance, minBombDistance, maxBombDistance);
             currentBombInstance.transform.position =
                 mainCamera.transform.position + directionFromCamera * newDistance;
-            Vector3 screenPoint = mainCamera.WorldToScreenPoint(
-                currentBombInstance.transform.position
-            );
-            dragOffset =
-                currentBombInstance.transform.position
-                - mainCamera.ScreenToWorldPoint(
-                    new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z)
-                );
         }
     }
 
@@ -240,16 +230,14 @@ public class BombPlacementController : MonoBehaviour
     {
         if (currentBombInstance != null)
         {
+            // 親子関係を解除し、ワールドのルートに配置する
+            currentBombInstance.transform.SetParent(null);
+
             Rigidbody bombRb = currentBombInstance.GetComponent<Rigidbody>();
             if (bombRb != null)
             {
-                bombRb.isKinematic = true; // 設置後もKinematicのまま
+                bombRb.isKinematic = true;
             }
-            // Collider bombCollider = currentBombInstance.GetComponent<Collider>();
-            // if (bombCollider != null)
-            // {
-            //      bombCollider.isTrigger = false; // Triggerにしていた場合に戻すが、今回はTriggerにしていない
-            // }
 
             if (!placedBombs.Contains(currentBombInstance))
             {
@@ -260,21 +248,19 @@ public class BombPlacementController : MonoBehaviour
             currentBombInstance = null;
             isDraggingBomb = false;
 
-            // *** 改善点: ドラッグ終了時に建物の固定を解除 ***
             UnfreezeBuildingBlocksIfNecessary();
         }
     }
 
-    // *** 改善点: 建物のRigidbodyをKinematicにするメソッド ***
     private void FreezeBuildingBlocks()
     {
         if (buildingBlocksFrozen)
-            return; // 既に固定されている場合は何もしない
+            return;
 
         buildingBlockRigidbodies.Clear();
         originalKinematicStates.Clear();
 
-        BuildingBlock[] blocks = FindObjectsOfType<BuildingBlock>(); // パフォーマンス注意点
+        BuildingBlock[] blocks = FindObjectsOfType<BuildingBlock>();
         foreach (BuildingBlock block in blocks)
         {
             Rigidbody rb = block.GetComponent<Rigidbody>();
@@ -289,15 +275,14 @@ public class BombPlacementController : MonoBehaviour
         Debug.Log($"Froze {buildingBlockRigidbodies.Count} building blocks.");
     }
 
-    // *** 改善点: 建物のRigidbodyのKinematic状態を元に戻すメソッド ***
     private void UnfreezeBuildingBlocksIfNecessary()
     {
         if (!buildingBlocksFrozen)
-            return; // 固定されていない場合は何もしない
+            return;
 
         for (int i = 0; i < buildingBlockRigidbodies.Count; i++)
         {
-            if (buildingBlockRigidbodies[i] != null) // Rigidbodyが途中で破棄された可能性も考慮
+            if (buildingBlockRigidbodies[i] != null)
             {
                 buildingBlockRigidbodies[i].isKinematic = originalKinematicStates[i];
             }
@@ -310,8 +295,6 @@ public class BombPlacementController : MonoBehaviour
 
     public void ExplodeAllPlacedBombs()
     {
-        // 爆発前に建物の固定が解除されていることを保証する
-        // (通常はDropBombで解除されるが、何らかの理由でドラッグ中に爆発ボタンが押された場合など)
         UnfreezeBuildingBlocksIfNecessary();
 
         if (placedBombs.Count == 0)
@@ -354,7 +337,6 @@ public class BombPlacementController : MonoBehaviour
                 bomb.OnBombDestroyed -= RemoveBombFromList;
             }
         }
-        // アプリケーション終了時やシーン遷移時にも建物の固定を解除する
         UnfreezeBuildingBlocksIfNecessary();
     }
 }

@@ -244,7 +244,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bombPrefab: {fileID: 8646833127425538050, guid: d55b8ecca6cdba64bb25afc5eaea778a, type: 3}
-  dragSpeed: 10
+  playerTransform: {fileID: 0}
+  dragSensitivity: 0.3
   bombDistanceAdjustSpeed: 5
   minBombDistance: 2
   maxBombDistance: 25
