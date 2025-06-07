@@ -14,6 +14,13 @@ public class BombPlacementController : MonoBehaviour
     [SerializeField]
     private Transform playerTransform;
 
+    // ========== ここから追加 ==========
+    [Tooltip("フォースモードを管理するコントローラーへの参照")]
+    [SerializeField]
+    private ForceApplicatorController forceApplicatorController;
+
+    // ========== ここまで追加 ==========
+
     [Header("ドラッグ設定")]
     [Tooltip("ドラッグ時のマウス感度")]
     [SerializeField]
@@ -58,20 +65,62 @@ public class BombPlacementController : MonoBehaviour
         {
             var player = FindObjectOfType<PlayerController>();
             if (player != null)
-            {
                 playerTransform = player.transform;
-            }
             else
-            {
                 Debug.LogError("PlayerControllerが見つかりませんでした。");
-            }
         }
+
+        // ========== ここから追加 ==========
+        // ForceApplicatorControllerを自動で取得
+        if (forceApplicatorController == null)
+        {
+            forceApplicatorController = FindObjectOfType<ForceApplicatorController>();
+            if (forceApplicatorController == null)
+                Debug.LogError("ForceApplicatorControllerが見つかりませんでした。");
+        }
+        // ========== ここまで追加 ==========
 
         spawnBombButton?.onClick.AddListener(HandleSpawnBombButtonClick);
         explodeAllBombsButton?.onClick.AddListener(ExplodeAllPlacedBombs);
 
         bombLayerMask = LayerMask.GetMask(BOMB_TAG);
     }
+
+    void OnDestroy()
+    {
+        spawnBombButton?.onClick.RemoveListener(HandleSpawnBombButtonClick);
+        explodeAllBombsButton?.onClick.RemoveListener(ExplodeAllPlacedBombs);
+
+        foreach (Bomb bomb in placedBombs)
+        {
+            if (bomb != null)
+            {
+                bomb.OnBombDestroyed -= RemoveBombFromList;
+            }
+        }
+        UnfreezeBuildingBlocksIfNecessary();
+    }
+
+    // ========== ここからロジック変更 ==========
+    private void HandleSpawnBombButtonClick()
+    {
+        // フォースモードが有効な場合は、爆弾モードに切り替えるだけ
+        if (forceApplicatorController != null && forceApplicatorController.IsForceModeActive)
+        {
+            forceApplicatorController.ActivateBombMode();
+        }
+        // 既に爆弾モードの場合は、新しい爆弾を生成する
+        else
+        {
+            if (isDraggingBomb && currentBombInstance != null)
+            {
+                DropBomb();
+            }
+            SpawnBomb();
+        }
+    }
+
+    // ========== ここまでロジック変更 ==========
 
     void Update()
     {
@@ -83,45 +132,28 @@ public class BombPlacementController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            // UI上でのクリックは無視
             if (EventSystem.current.IsPointerOverGameObject())
                 return;
-
             if (!isDraggingBomb)
-            {
                 TrySelectBomb();
-            }
         }
 
         if (Input.GetMouseButtonUp(0))
         {
             if (isDraggingBomb)
-            {
                 DropBomb();
-            }
         }
     }
 
-    private void HandleSpawnBombButtonClick()
-    {
-        if (isDraggingBomb && currentBombInstance != null)
-        {
-            DropBomb();
-        }
-        SpawnBomb();
-    }
-
+    // 以下、他のメソッドは変更なし
     public void SpawnBomb()
     {
         FreezeBuildingBlocks();
-
         Vector3 spawnPosition =
             mainCamera.transform.position + mainCamera.transform.forward * minBombDistance;
         currentBombInstance = Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
-
         currentBombInstance.gameObject.tag = BOMB_TAG;
         currentBombInstance.gameObject.layer = LayerMask.NameToLayer(BOMB_TAG);
-
         SetupBombForDragging(currentBombInstance);
     }
 
@@ -133,13 +165,11 @@ public class BombPlacementController : MonoBehaviour
             if (hit.collider.TryGetComponent<Bomb>(out var hitBomb))
             {
                 FreezeBuildingBlocks();
-
                 if (placedBombs.Contains(hitBomb))
                 {
                     placedBombs.Remove(hitBomb);
                     hitBomb.OnBombDestroyed -= RemoveBombFromList;
                 }
-
                 currentBombInstance = hitBomb;
                 SetupBombForDragging(currentBombInstance);
             }
@@ -152,14 +182,12 @@ public class BombPlacementController : MonoBehaviour
         {
             bomb.transform.SetParent(playerTransform);
         }
-
         if (bomb.TryGetComponent<Rigidbody>(out var bombRb))
         {
             bombRb.useGravity = false;
             bombRb.isKinematic = true;
             bombRb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         }
-
         isDraggingBomb = true;
     }
 
@@ -184,7 +212,6 @@ public class BombPlacementController : MonoBehaviour
                 currentBombInstance.transform.position
             );
             float newDistance = currentDistance - scrollInput * bombDistanceAdjustSpeed;
-
             newDistance = Mathf.Clamp(newDistance, minBombDistance, maxBombDistance);
             currentBombInstance.transform.position =
                 mainCamera.transform.position + directionFromCamera * newDistance;
@@ -196,21 +223,17 @@ public class BombPlacementController : MonoBehaviour
         if (currentBombInstance != null)
         {
             currentBombInstance.transform.SetParent(null);
-
             if (currentBombInstance.TryGetComponent<Rigidbody>(out var bombRb))
             {
                 bombRb.isKinematic = true;
             }
-
             if (!placedBombs.Contains(currentBombInstance))
             {
                 placedBombs.Add(currentBombInstance);
                 currentBombInstance.OnBombDestroyed += RemoveBombFromList;
             }
-
             currentBombInstance = null;
             isDraggingBomb = false;
-
             UnfreezeBuildingBlocksIfNecessary();
         }
     }
@@ -219,10 +242,8 @@ public class BombPlacementController : MonoBehaviour
     {
         if (buildingBlocksFrozen)
             return;
-
         buildingBlockRigidbodies.Clear();
         originalKinematicStates.Clear();
-
         BuildingBlock[] blocks = FindObjectsOfType<BuildingBlock>();
         foreach (BuildingBlock block in blocks)
         {
@@ -240,7 +261,6 @@ public class BombPlacementController : MonoBehaviour
     {
         if (!buildingBlocksFrozen)
             return;
-
         for (int i = 0; i < buildingBlockRigidbodies.Count; i++)
         {
             if (buildingBlockRigidbodies[i] != null)
@@ -258,8 +278,6 @@ public class BombPlacementController : MonoBehaviour
         UnfreezeBuildingBlocksIfNecessary();
         if (placedBombs.Count == 0)
             return;
-
-        // ループ中にリストが変更される可能性があるため、コピーに対して処理を行う
         List<Bomb> bombsToExplode = new List<Bomb>(placedBombs);
         foreach (Bomb bomb in bombsToExplode)
         {
@@ -274,20 +292,5 @@ public class BombPlacementController : MonoBehaviour
             bomb.OnBombDestroyed -= RemoveBombFromList;
             placedBombs.Remove(bomb);
         }
-    }
-
-    void OnDestroy()
-    {
-        spawnBombButton?.onClick.RemoveListener(HandleSpawnBombButtonClick);
-        explodeAllBombsButton?.onClick.RemoveListener(ExplodeAllPlacedBombs);
-
-        foreach (Bomb bomb in placedBombs)
-        {
-            if (bomb != null)
-            {
-                bomb.OnBombDestroyed -= RemoveBombFromList;
-            }
-        }
-        UnfreezeBuildingBlocksIfNecessary();
     }
 }
