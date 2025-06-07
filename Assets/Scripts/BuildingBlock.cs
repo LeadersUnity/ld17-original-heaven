@@ -132,16 +132,4 @@ public class BuildingBlock : MonoBehaviour
             Destroy(gameObject);
         }
     }
-
-    /// <summary>
-    /// エディタのシーンビューでのみ、デバッグ用のギズモを描画します。
-    /// </summary>
-    void OnDrawGizmos()
-    {
-        if (showGizmos)
-        {
-            Gizmos.color = new Color(1f, 1f, 0f, 0.5f); // 半透明の黄色
-            Gizmos.DrawWireSphere(transform.position, connectionRadius);
-        }
-    }
 }
