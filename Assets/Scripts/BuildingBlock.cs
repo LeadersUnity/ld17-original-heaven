@@ -1,89 +1,81 @@
-using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 破壊可能な建物を構成する個々のブロック。
+/// 主にゲームルールとの連携（スコア加算、破壊通知）と自身の状態管理を担当する。
+/// </summary>
+[RequireComponent(typeof(Rigidbody), typeof(Renderer))]
 public class BuildingBlock : MonoBehaviour
 {
-    [Header("接着設定")]
+    // --- Public Configuration ---
+    [Header("物理特性")]
+    [Tooltip("他のブロックと接続する際の基準となる半径。接続処理は外部クラスが行う。")]
     public float connectionRadius = 1.1f;
+
+    [Tooltip("このブロックから生成されるジョイントが耐えられる力の限界値。")]
     public float breakForce = 1000f;
+
+    [Tooltip("このブロックから生成されるジョイントが耐えられる回転力の限界値。")]
     public float breakTorque = 1000f;
 
     [Header("マテリアル設定")]
+    [Tooltip("硬いブロック用のマテリアル。")]
     public Material hardMaterial;
+
+    [Tooltip("柔らかいブロック用のマテリアル。")]
     public Material softMaterial;
+
+    [Tooltip("硬い/柔らかいを判定するbreakForceのしきい値。")]
     public float hardnessThreshold = 1500f;
 
-    [Header("落下設定")]
+    [Header("ゲーム設定")]
+    [Tooltip("このY座標より下に落下した場合、オブジェクトは破壊される。")]
     public float fallLimitY = -100f;
 
     [Header("デバッグ")]
+    [Tooltip("接続半径をシーンビューに表示するかどうか。")]
     public bool showGizmos = true;
 
+    // --- Private State ---
     private Rigidbody rb;
     private Renderer blockRenderer;
-    private static HashSet<Rigidbody> processedRigidbodies = new HashSet<Rigidbody>();
-
     private bool hasBeenScored = false;
-    private bool hasBeenCountedForTask1 = false;
+    private bool hasBeenCountedForTask = false;
 
+    /// <summary>
+    /// コンポーネントの参照を取得し、初期設定を行います。
+    /// </summary>
     void Awake()
     {
+        // 必須コンポーネントをキャッシュ
         rb = GetComponent<Rigidbody>();
         blockRenderer = GetComponent<Renderer>();
-    }
 
-    void Start()
-    {
-        if (rb == null)
-            return;
-
+        // 自身の硬さに応じてマテリアルを設定
         SetMaterialBasedOnHardness();
-
-        if (processedRigidbodies.Contains(rb))
-        {
-            return;
-        }
-        ConnectToNeighbors();
-        processedRigidbodies.Add(rb);
-
-        // GameManagerのInitializeGameでブロック数をカウントするため、ここでの個別登録は不要。
-        // if (GameManager.Instance != null)
-        // {
-        //     GameManager.Instance.RegisterBlock(); // この行を削除またはコメントアウト
-        // }
-        // else
-        // {
-        //     Debug.LogError("GameManager instance not found. Cannot register block.", gameObject);
-        // }
-        if (GameManager.Instance == null) // GameManagerの存在チェックは残しても良い
-        {
-            Debug.LogError(
-                "GameManager instance not found during BuildingBlock.Start(). Game logic might be affected.",
-                gameObject
-            );
-        }
     }
 
+    /// <summary>
+    /// ゲームのメインループ中に毎フレーム呼ばれます。
+    /// </summary>
     void Update()
     {
-        if (transform.position.y < fallLimitY)
-        {
-            if (!hasBeenCountedForTask1 && GameManager.Instance != null)
-            {
-                GameManager.Instance.NotifyBlockDestroyed();
-                hasBeenCountedForTask1 = true;
-            }
-            Destroy(gameObject);
-        }
+        // ブロックが奈落に落ちすぎていないか監視
+        CheckFallLimit();
     }
 
+    /// <summary>
+    /// 他のColliderと衝突した際に呼ばれます。
+    /// </summary>
     void OnCollisionEnter(Collision collision)
     {
+        // GameManagerが見つからない場合は処理を中断
         if (GameManager.Instance == null)
             return;
 
         string contactTag = collision.gameObject.tag;
 
+        // --- スコア処理 ---
         if (!hasBeenScored)
         {
             if (contactTag == "Ground")
@@ -98,121 +90,57 @@ public class BuildingBlock : MonoBehaviour
             }
         }
 
-        if (!hasBeenCountedForTask1 && (contactTag == "Ground" || contactTag == "Road"))
+        // --- タスク1（破壊率）のカウント処理 ---
+        if (!hasBeenCountedForTask && (contactTag == "Ground" || contactTag == "Road"))
         {
             GameManager.Instance.NotifyBlockDestroyed();
-            hasBeenCountedForTask1 = true;
+            hasBeenCountedForTask = true;
         }
 
+        // --- タスク2（道路接触）の通知処理 ---
         if (contactTag == "Road")
         {
             GameManager.Instance.NotifyRoadContact();
         }
     }
 
-    void SetMaterialBasedOnHardness()
+    /// <summary>
+    /// ブロックの硬さ(breakForce)に基づいてマテリアルを動的に変更します。
+    /// </summary>
+    private void SetMaterialBasedOnHardness()
     {
-        if (blockRenderer == null || hardMaterial == null || softMaterial == null)
-        {
-            if (blockRenderer != null && (hardMaterial == null || softMaterial == null))
-            {
-                Debug.LogWarning(
-                    "hardMaterialまたはsoftMaterialが設定されていません。",
-                    gameObject
-                );
-            }
+        if (hardMaterial == null || softMaterial == null)
             return;
-        }
 
         blockRenderer.material = (breakForce >= hardnessThreshold) ? hardMaterial : softMaterial;
     }
 
-    void ConnectToNeighbors()
+    /// <summary>
+    /// ブロックが一定の高さより下に落下した場合に自身を破壊します。
+    /// </summary>
+    private void CheckFallLimit()
     {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, connectionRadius);
-
-        foreach (Collider hitCollider in colliders)
+        if (transform.position.y < fallLimitY)
         {
-            if (hitCollider.gameObject == gameObject)
-                continue;
-
-            Rigidbody connectedRb = hitCollider.attachedRigidbody;
-            if (connectedRb == null || processedRigidbodies.Contains(connectedRb))
-                continue;
-
-            bool alreadyConnected = false;
-            foreach (FixedJoint joint in GetComponents<FixedJoint>())
+            // 落下による破壊もタスクのカウント対象にする
+            if (!hasBeenCountedForTask && GameManager.Instance != null)
             {
-                if (joint.connectedBody == connectedRb)
-                {
-                    alreadyConnected = true;
-                    break;
-                }
+                GameManager.Instance.NotifyBlockDestroyed();
+                hasBeenCountedForTask = true;
             }
-            if (alreadyConnected)
-                continue;
-
-            foreach (FixedJoint joint in connectedRb.GetComponents<FixedJoint>())
-            {
-                if (joint.connectedBody == rb)
-                {
-                    alreadyConnected = true;
-                    break;
-                }
-            }
-            if (alreadyConnected)
-                continue;
-
-            FixedJoint newJoint = gameObject.AddComponent<FixedJoint>();
-            newJoint.connectedBody = connectedRb;
-
-            BuildingBlock otherBlock = connectedRb.GetComponent<BuildingBlock>();
-            if (otherBlock != null)
-            {
-                newJoint.breakForce = Mathf.Min(this.breakForce, otherBlock.breakForce);
-                newJoint.breakTorque = Mathf.Min(this.breakTorque, otherBlock.breakTorque);
-            }
-            else
-            {
-                newJoint.breakForce = this.breakForce;
-                newJoint.breakTorque = this.breakTorque;
-            }
+            // オブジェクトをシーンから削除
+            Destroy(gameObject);
         }
     }
 
-    void OnDestroy()
-    {
-        if (rb != null)
-        {
-            processedRigidbodies.Remove(rb);
-        }
-    }
-
-    static BuildingBlock()
-    {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-#endif
-    }
-
-#if UNITY_EDITOR
-    private static void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
-    {
-        if (
-            state == UnityEditor.PlayModeStateChange.ExitingPlayMode
-            || state == UnityEditor.PlayModeStateChange.ExitingEditMode
-        )
-        {
-            processedRigidbodies.Clear();
-        }
-    }
-#endif
-
+    /// <summary>
+    /// エディタのシーンビューでのみ、デバッグ用のギズモを描画します。
+    /// </summary>
     void OnDrawGizmos()
     {
         if (showGizmos)
         {
-            Gizmos.color = Color.yellow;
+            Gizmos.color = new Color(1f, 1f, 0f, 0.5f); // 半透明の黄色
             Gizmos.DrawWireSphere(transform.position, connectionRadius);
         }
     }

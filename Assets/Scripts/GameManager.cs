@@ -10,10 +10,7 @@ public class GameManager : MonoBehaviour
     public Text scoreText;
     public Text taskDisplayText;
 
-    [Header("Scoring")]
     private int currentScore = 0;
-
-    [Header("Task Management")]
     private int totalInitialBlocks = 0;
     private int destroyedBlocksForTask1 = 0;
 
@@ -24,9 +21,7 @@ public class GameManager : MonoBehaviour
     private bool task2_isFailed = false;
 
     private bool gameHasEnded = false;
-
-    [Header("Scene Management")]
-    private string lastPlayedSceneName; // 直前にプレイしたシーン名を保持する変数
+    private string lastPlayedSceneName;
 
     void Awake()
     {
@@ -38,37 +33,29 @@ public class GameManager : MonoBehaviour
         else if (Instance != this)
         {
             Destroy(gameObject);
-            return;
         }
     }
 
-    // ゲームプレイシーン開始時に呼ばれることを想定した初期化メソッド
     public void InitializeGame()
     {
         lastPlayedSceneName = SceneManager.GetActiveScene().name;
         currentScore = 0;
-        UpdateScoreUI(); // スコアUIを先にリセット
 
-        // シーン内のアクティブなBuildingBlockを検索して総数を設定
-        BuildingBlock[] blocksInScene = FindObjectsOfType<BuildingBlock>();
-        totalInitialBlocks = blocksInScene.Length;
-        Debug.Log(
-            $"Game Initialized. Total initial blocks found: {totalInitialBlocks}. Time: {Time.time}"
-        ); // 初期ブロック数ログ
-
+        totalInitialBlocks = FindObjectsOfType<BuildingBlock>().Length;
         destroyedBlocksForTask1 = 0;
+
         task1_isAchieved = false;
         task2_isFailed = false;
         gameHasEnded = false;
 
-        UpdateTaskDisplayUI(); // 全ての値を設定後にタスクUIを更新
-        Debug.Log("Game initialized: Score and tasks have been reset.");
+        UpdateScoreUI();
+        UpdateTaskDisplayUI();
+        Debug.Log($"Game Initialized. Total blocks: {totalInitialBlocks}");
     }
 
-    public string GetLastPlayedSceneName()
-    {
-        return lastPlayedSceneName;
-    }
+    public string GetLastPlayedSceneName() => lastPlayedSceneName;
+
+    public int GetFinalScore() => currentScore;
 
     void UpdateScoreUI()
     {
@@ -80,35 +67,16 @@ public class GameManager : MonoBehaviour
 
     void UpdateTaskDisplayUI()
     {
-        if (taskDisplayText != null)
-        {
-            string task1Status = task1_isAchieved
-                ? " (達成)"
-                : (
-                    totalInitialBlocks > 0
-                        ? $" ({(float)destroyedBlocksForTask1 / totalInitialBlocks * 100:F0}%)"
-                        : " (0%)"
-                );
-            string task2Status = task2_isFailed ? " (失敗)" : " (継続中)";
-            // totalInitialBlocks が 0 の場合でも破壊率が NaN や Infinity にならないように調整
-            float destructionPercentageValue = 0f;
-            if (totalInitialBlocks > 0)
-            {
-                destructionPercentageValue =
-                    (float)destroyedBlocksForTask1 / totalInitialBlocks * 100;
-            }
-            task1Status = task1_isAchieved ? " (達成)" : $" ({destructionPercentageValue:F0}%)";
+        if (taskDisplayText == null)
+            return;
 
-            taskDisplayText.text =
-                $"{TASK1_DESCRIPTION}{task1Status}\n{TASK2_DESCRIPTION}{task2Status}";
-        }
-    }
+        float percentage =
+            totalInitialBlocks > 0 ? (float)destroyedBlocksForTask1 / totalInitialBlocks * 100 : 0;
+        string task1Status = task1_isAchieved ? " (達成)" : $" ({percentage:F0}%)";
+        string task2Status = task2_isFailed ? " (失敗)" : " (継続中)";
 
-    // このメソッドはBuildingBlockからは呼ばれなくなるが、動的生成などのために残すことは可能
-    public void RegisterBlock()
-    {
-        totalInitialBlocks++;
-        UpdateTaskDisplayUI();
+        taskDisplayText.text =
+            $"{TASK1_DESCRIPTION}{task1Status}\n{TASK2_DESCRIPTION}{task2Status}";
     }
 
     public void AddScore(int amount)
@@ -143,17 +111,10 @@ public class GameManager : MonoBehaviour
 
     private void CheckTask1Completion()
     {
-        Debug.Log(
-            "CheckTask1Completion called. totalInitialBlocks: "
-                + totalInitialBlocks
-                + ", destroyedBlocksForTask1: "
-                + destroyedBlocksForTask1
-        ); // 修正後のログ確認
         if (task1_isAchieved || totalInitialBlocks == 0)
             return;
 
-        float destructionPercentage = (float)destroyedBlocksForTask1 / totalInitialBlocks;
-        if (destructionPercentage >= 0.8f)
+        if ((float)destroyedBlocksForTask1 / totalInitialBlocks >= 0.8f)
         {
             task1_isAchieved = true;
             Debug.Log($"{TASK1_DESCRIPTION} クリア");
@@ -171,20 +132,16 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (task1_isAchieved && !task2_isFailed)
+        if (task1_isAchieved) // タスク2が失敗していないことは上でチェック済み
         {
             TriggerGameClear();
             return;
         }
 
-        if (
-            totalInitialBlocks > 0
-            && destroyedBlocksForTask1 == totalInitialBlocks
-            && !task1_isAchieved
-        )
+        // 全ブロックが破壊されたのにタスク1が未達成の場合
+        if (destroyedBlocksForTask1 == totalInitialBlocks && !task1_isAchieved)
         {
-            TriggerGameOver("タスク1未達成 (全ブロック処理完了が破壊率80%未満)");
-            return;
+            TriggerGameOver("タスク1未達成 (破壊率が80%未満)");
         }
     }
 
@@ -204,19 +161,5 @@ public class GameManager : MonoBehaviour
         gameHasEnded = true;
         Debug.Log($"ゲームオーバー... 理由: {reason} スコア: " + currentScore);
         SceneManager.LoadScene("GameOverScene");
-    }
-
-    public int GetFinalScore()
-    {
-        return currentScore;
-    }
-
-    public void CleanUpForNewGame()
-    {
-        if (Instance == this)
-        {
-            Instance = null;
-        }
-        Destroy(gameObject);
     }
 }
