@@ -447,6 +447,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   forceMagnitude: 500
+  forceEffectPrefab: {fileID: 6280281539998945384, guid: f78aaaec3b393e24ca74cd6de8194347, type: 3}
   forceModeButton: {fileID: 44693549}
   buttonNormalColor: {r: 1, g: 1, b: 1, a: 1}
   buttonActiveColor: {r: 0.5, g: 1, b: 0.5, a: 1}
@@ -8103,6 +8104,10 @@ PrefabInstance:
     - target: {fileID: 2029630952130879967, guid: 9ff45ffaaa141ce4b9c8433ab8c3cf6d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2311722293643520370, guid: 9ff45ffaaa141ce4b9c8433ab8c3cf6d, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

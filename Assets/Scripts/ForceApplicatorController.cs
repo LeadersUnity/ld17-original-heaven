@@ -4,13 +4,20 @@ using UnityEngine.UI;
 
 public class ForceApplicatorController : MonoBehaviour
 {
-    // isForceModeActiveを外部から読み取り専用のプロパティに変更
     public bool IsForceModeActive { get; private set; } = false;
 
     [Header("フォース設定")]
     [Tooltip("加える力の大きさ")]
     [SerializeField]
     private float forceMagnitude = 500f;
+
+    // ========== ここから追加 ==========
+    [Header("エフェクト設定")]
+    [Tooltip("力を加える座標に表示するエフェクトのプレハブ")]
+    [SerializeField]
+    private ParticleSystem forceEffectPrefab;
+
+    // ========== ここまで追加 ==========
 
     [Header("UI設定")]
     [Tooltip("モードを切り替えるUIボタン")]
@@ -32,14 +39,13 @@ public class ForceApplicatorController : MonoBehaviour
 
     private Camera mainCamera;
     private Image buttonImage;
+    private ParticleSystem currentForceEffectInstance; // 表示中のエフェクトインスタンスを保持
 
     void Awake()
     {
         mainCamera = Camera.main;
-
         if (forceModeButton != null)
         {
-            // ToggleForceModeの代わりにActivateForceModeを登録
             forceModeButton.onClick.AddListener(ActivateForceMode);
             buttonImage = forceModeButton.GetComponent<Image>();
         }
@@ -47,7 +53,6 @@ public class ForceApplicatorController : MonoBehaviour
         {
             Debug.LogError("Force Mode Buttonが設定されていません。");
         }
-
         if (bombPlacementController == null)
         {
             bombPlacementController = FindObjectOfType<BombPlacementController>();
@@ -63,16 +68,10 @@ public class ForceApplicatorController : MonoBehaviour
     {
         if (forceModeButton != null)
         {
-            // リスナー解除も修正
             forceModeButton.onClick.RemoveListener(ActivateForceMode);
         }
     }
 
-    // ========== ここからロジック変更 ==========
-
-    /// <summary>
-    /// フォースモードを有効にします。既にフォースモードの場合は何もしません。
-    /// </summary>
     public void ActivateForceMode()
     {
         if (IsForceModeActive)
@@ -81,15 +80,14 @@ public class ForceApplicatorController : MonoBehaviour
         UpdateVisualsAndControllers();
     }
 
-    /// <summary>
-    /// 爆弾配置モードを有効にします。既に爆弾配置モードの場合は何もしません。
-    /// </summary>
     public void ActivateBombMode()
     {
         if (!IsForceModeActive)
             return;
         IsForceModeActive = false;
         UpdateVisualsAndControllers();
+        // モード切替時にエフェクトが残らないように停止する
+        StopForceEffect();
     }
 
     private void UpdateVisualsAndControllers()
@@ -114,22 +112,30 @@ public class ForceApplicatorController : MonoBehaviour
         }
     }
 
-    // ========== ここまでロジック変更 ==========
-
     void Update()
     {
         if (!IsForceModeActive)
             return;
 
+        // マウスの左ボタンが押された瞬間の処理
         if (Input.GetMouseButtonDown(0))
         {
             if (EventSystem.current.IsPointerOverGameObject())
                 return;
-            ApplyForceAtMousePosition();
+            ApplyForceAndStartEffect();
         }
+
+        // ========== ここから追加 ==========
+        // マウスの左ボタンが離された瞬間の処理
+        if (Input.GetMouseButtonUp(0))
+        {
+            StopForceEffect();
+        }
+        // ========== ここまで追加 ==========
     }
 
-    private void ApplyForceAtMousePosition()
+    // メソッド名を変更し、エフェクト開始処理を追加
+    private void ApplyForceAndStartEffect()
     {
         if (mainCamera == null)
         {
@@ -140,6 +146,7 @@ public class ForceApplicatorController : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
+            // 力を加える処理
             Rigidbody targetRb = hit.collider.GetComponentInParent<Rigidbody>();
             if (targetRb != null)
             {
@@ -150,6 +157,39 @@ public class ForceApplicatorController : MonoBehaviour
                     ForceMode.Impulse
                 );
             }
+
+            // ========== ここから追加 ==========
+            // エフェクトを生成・再生する処理
+            if (forceEffectPrefab != null)
+            {
+                // 念のため古いエフェクトを停止
+                StopForceEffect();
+
+                // エフェクトをヒットした地点に、表面の法線に沿う形で生成
+                currentForceEffectInstance = Instantiate(
+                    forceEffectPrefab,
+                    hit.point,
+                    Quaternion.LookRotation(hit.normal)
+                );
+                currentForceEffectInstance.Play();
+            }
+            // ========== ここまで追加 ==========
         }
     }
+
+    // ========== ここから追加 ==========
+    /// <summary>
+    /// 表示中のフォースエフェクトを停止・破棄します。
+    /// </summary>
+    private void StopForceEffect()
+    {
+        if (currentForceEffectInstance != null)
+        {
+            currentForceEffectInstance.Stop();
+            // パーティクルが自然に消えるのを待ってからオブジェクトを破棄する
+            Destroy(currentForceEffectInstance.gameObject, 2f);
+            currentForceEffectInstance = null;
+        }
+    }
+    // ========== ここまで追加 ==========
 }
