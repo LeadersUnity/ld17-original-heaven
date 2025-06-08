@@ -11,11 +11,16 @@ public class ForceApplicatorController : MonoBehaviour
     [SerializeField]
     private float forceMagnitude = 500f;
 
-    // ========== ここから追加 ==========
     [Header("エフェクト設定")]
     [Tooltip("力を加える座標に表示するエフェクトのプレハブ")]
     [SerializeField]
     private ParticleSystem forceEffectPrefab;
+
+    // ========== ここから追加 ==========
+    [Header("サウンド設定")]
+    [Tooltip("フォース適用時に再生する効果音")]
+    [SerializeField]
+    private AudioClip forceSound;
 
     // ========== ここまで追加 ==========
 
@@ -39,7 +44,7 @@ public class ForceApplicatorController : MonoBehaviour
 
     private Camera mainCamera;
     private Image buttonImage;
-    private ParticleSystem currentForceEffectInstance; // 表示中のエフェクトインスタンスを保持
+    private ParticleSystem currentForceEffectInstance;
 
     void Awake()
     {
@@ -86,7 +91,6 @@ public class ForceApplicatorController : MonoBehaviour
             return;
         IsForceModeActive = false;
         UpdateVisualsAndControllers();
-        // モード切替時にエフェクトが残らないように停止する
         StopForceEffect();
     }
 
@@ -117,7 +121,6 @@ public class ForceApplicatorController : MonoBehaviour
         if (!IsForceModeActive)
             return;
 
-        // マウスの左ボタンが押された瞬間の処理
         if (Input.GetMouseButtonDown(0))
         {
             if (EventSystem.current.IsPointerOverGameObject())
@@ -125,16 +128,12 @@ public class ForceApplicatorController : MonoBehaviour
             ApplyForceAndStartEffect();
         }
 
-        // ========== ここから追加 ==========
-        // マウスの左ボタンが離された瞬間の処理
         if (Input.GetMouseButtonUp(0))
         {
             StopForceEffect();
         }
-        // ========== ここまで追加 ==========
     }
 
-    // メソッド名を変更し、エフェクト開始処理を追加
     private void ApplyForceAndStartEffect()
     {
         if (mainCamera == null)
@@ -146,6 +145,14 @@ public class ForceApplicatorController : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
+            // ========== ここから追加 ==========
+            // SoundManagerを使って効果音を再生
+            if (SoundManager.Instance != null && forceSound != null)
+            {
+                SoundManager.Instance.PlaySE(forceSound);
+            }
+            // ========== ここまで追加 ==========
+
             // 力を加える処理
             Rigidbody targetRb = hit.collider.GetComponentInParent<Rigidbody>();
             if (targetRb != null)
@@ -158,14 +165,10 @@ public class ForceApplicatorController : MonoBehaviour
                 );
             }
 
-            // ========== ここから追加 ==========
             // エフェクトを生成・再生する処理
             if (forceEffectPrefab != null)
             {
-                // 念のため古いエフェクトを停止
                 StopForceEffect();
-
-                // エフェクトをヒットした地点に、表面の法線に沿う形で生成
                 currentForceEffectInstance = Instantiate(
                     forceEffectPrefab,
                     hit.point,
@@ -173,23 +176,16 @@ public class ForceApplicatorController : MonoBehaviour
                 );
                 currentForceEffectInstance.Play();
             }
-            // ========== ここまで追加 ==========
         }
     }
 
-    // ========== ここから追加 ==========
-    /// <summary>
-    /// 表示中のフォースエフェクトを停止・破棄します。
-    /// </summary>
     private void StopForceEffect()
     {
         if (currentForceEffectInstance != null)
         {
             currentForceEffectInstance.Stop();
-            // パーティクルが自然に消えるのを待ってからオブジェクトを破棄する
             Destroy(currentForceEffectInstance.gameObject, 2f);
             currentForceEffectInstance = null;
         }
     }
-    // ========== ここまで追加 ==========
 }
