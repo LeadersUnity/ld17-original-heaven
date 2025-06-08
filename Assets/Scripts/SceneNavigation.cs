@@ -10,20 +10,19 @@ public class SceneNavigation : MonoBehaviour
             Debug.LogError("Scene name to load cannot be empty!");
             return;
         }
-        SceneManager.LoadScene(sceneName);
+        FadeManager.Instance.LoadScene(sceneName, 1f);
     }
 
     public void RestartLastPlayedScene()
     {
         string sceneNameToLoad = GameManager.Instance.GetLastPlayedSceneName();
-
-        SceneManager.LoadScene(sceneNameToLoad);
+        FadeManager.Instance.LoadScene(sceneNameToLoad, 1f);
     }
 
     public void ReloadCurrentScene()
     {
         Scene currentScene = SceneManager.GetActiveScene();
-        SceneManager.LoadScene(currentScene.name);
+        FadeManager.Instance.LoadScene(currentScene.name, 1f);
     }
 
     public void QuitGame()
