@@ -10,19 +10,38 @@ public class SceneNavigation : MonoBehaviour
             Debug.LogError("Scene name to load cannot be empty!");
             return;
         }
+        Time.timeScale = 1f; // 時間を元に戻す
         FadeManager.Instance.LoadScene(sceneName, 0.3f);
     }
 
     public void RestartLastPlayedScene()
     {
+        Time.timeScale = 1f; // 時間を元に戻す
         string sceneNameToLoad = GameManager.Instance.GetLastPlayedSceneName();
-        FadeManager.Instance.LoadScene(sceneNameToLoad, 0.3f);
+        if (!string.IsNullOrEmpty(sceneNameToLoad))
+        {
+            FadeManager.Instance.LoadScene(sceneNameToLoad, 0.3f);
+        }
+        else
+        {
+            Debug.LogError("Last played scene name is not available!");
+        }
     }
 
     public void ReloadCurrentScene()
     {
+        Time.timeScale = 1f; // 時間を元に戻す
         Scene currentScene = SceneManager.GetActiveScene();
         FadeManager.Instance.LoadScene(currentScene.name, 0.3f);
+    }
+
+    public void QuitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     /// <summary>
@@ -30,21 +49,10 @@ public class SceneNavigation : MonoBehaviour
     /// </summary>
     public void ResetAllHighScores()
     {
-        // 確認ダイアログを挟むのが親切だが、ここでは直接リセット
         GameManager.ResetAllHighScores();
         Debug.Log("All high scores have been reset.");
 
-        // もしタイトル画面にハイスコア表示があるなら、それを更新する処理も必要
+        // タイトル画面にハイスコア表示があるなら、それを更新する処理も必要
         // 例: FindObjectOfType<TitleScreenUI>()?.UpdateHighScoreDisplay();
-    }
-
-    public void QuitGame()
-    {
-        // Editor上ではApplication.Quit()は効かないことが多い
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-        Application.Quit();
-#endif
     }
 }

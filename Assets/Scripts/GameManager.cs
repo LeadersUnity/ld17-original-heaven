@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -12,25 +11,27 @@ public class GameManager : MonoBehaviour
     [Header("UI References")]
     public Text scoreText;
     public Text taskDisplayText;
-    public Text highScoreText; // ハイスコア表示用に追加
+    public Text highScoreText;
 
     // --- ゲームの状態管理 ---
     private StageData currentStageData;
     private bool gameHasEnded = false;
+    private int currentScore = 0;
+    private string lastPlayedSceneName;
 
     // スコア計算とタスク進行度に必要な変数
     public int InitialBlockCount { get; private set; }
     public int DestroyedBlockCount { get; private set; }
+    public int BlocksOnGroundCount { get; private set; }
+    public int BlocksOnRoadCount { get; private set; }
     public int InitialJointCount { get; private set; }
     public int DestroyedJointCount { get; private set; }
     public int BombUsedCount { get; private set; }
     public int ForceUsedCount { get; private set; }
     public float ElapsedTime { get; private set; }
     public bool HasContactedRoad { get; private set; }
-
     public int TotalItemsUsed => BombUsedCount + ForceUsedCount;
 
-    // PlayerPrefs用キー
     private const string HIGHSCORE_KEY_PREFIX = "HighScore_";
 
     void Awake()
@@ -48,31 +49,32 @@ public class GameManager : MonoBehaviour
 
     public void InitializeGame(StageData stageData)
     {
+        // 時間を動かす
+        Time.timeScale = 1f;
+
         currentStageData = stageData;
+        lastPlayedSceneName = SceneManager.GetActiveScene().name;
         gameHasEnded = false;
 
-        // 各種パラメータをリセット
         InitialBlockCount = FindObjectsOfType<BuildingBlock>().Length;
         DestroyedBlockCount = 0;
+        BlocksOnGroundCount = 0;
+        BlocksOnRoadCount = 0;
         InitialJointCount = FindObjectsOfType<Joint>().Length;
         DestroyedJointCount = 0;
         BombUsedCount = 0;
         ForceUsedCount = 0;
         ElapsedTime = 0f;
         HasContactedRoad = false;
+        currentScore = 0;
 
-        // タスクの初期化
         foreach (var task in currentStageData.tasks)
         {
             task.Initialize(this);
         }
 
-        UpdateScoreUI(0);
-        UpdateTaskDisplayUI();
         UpdateHighScoreUI();
-        Debug.Log(
-            $"Game Initialized for Stage: {currentStageData.stageName}. Total blocks: {InitialBlockCount}, Total joints: {InitialJointCount}"
-        );
+        Debug.Log($"Game Initialized for Stage: {currentStageData.stageName}.");
     }
 
     void Update()
@@ -82,61 +84,68 @@ public class GameManager : MonoBehaviour
 
         ElapsedTime += Time.deltaTime;
 
+        // リアルタイムでスコアを計算・表示
+        currentScore = CalculateCurrentScore();
+        UpdateScoreUI(currentScore);
         UpdateTaskDisplayUI();
+
         CheckGameEndConditions();
     }
 
     // --- Public Notification Methods ---
     public void NotifyBlockDestroyed()
     {
-        if (gameHasEnded)
-            return;
-        DestroyedBlockCount++;
+        if (!gameHasEnded)
+            DestroyedBlockCount++;
+    }
+
+    public void NotifyBlockOnGround()
+    {
+        if (!gameHasEnded)
+            BlocksOnGroundCount++;
+    }
+
+    public void NotifyBlockOnRoad()
+    {
+        if (!gameHasEnded)
+            BlocksOnRoadCount++;
     }
 
     public void NotifyRoadContact()
     {
-        if (gameHasEnded || HasContactedRoad)
-            return;
-        HasContactedRoad = true;
-        Debug.Log("タスク失敗の可能性: 道路に接触しました。");
+        if (!gameHasEnded)
+            HasContactedRoad = true;
     }
 
     public void NotifyJointDestroyed()
     {
-        if (gameHasEnded)
-            return;
-        DestroyedJointCount++;
+        if (!gameHasEnded)
+            DestroyedJointCount++;
     }
 
     public void NotifyBombUsed(int count = 1)
     {
-        if (gameHasEnded)
-            return;
-        BombUsedCount += count;
+        if (!gameHasEnded)
+            BombUsedCount += count;
     }
 
     public void NotifyForceUsed(int count = 1)
     {
-        if (gameHasEnded)
-            return;
-        ForceUsedCount += count;
+        if (!gameHasEnded)
+            ForceUsedCount += count;
     }
 
     // --- UI Update Methods ---
     private void UpdateScoreUI(int score)
     {
         if (scoreText != null)
-        {
             scoreText.text = score.ToString();
-        }
     }
 
     private void UpdateTaskDisplayUI()
     {
         if (taskDisplayText == null || currentStageData == null)
             return;
-
         StringBuilder sb = new StringBuilder();
         foreach (var task in currentStageData.tasks)
         {
@@ -147,7 +156,7 @@ public class GameManager : MonoBehaviour
 
     private void UpdateHighScoreUI()
     {
-        if (highScoreText != null)
+        if (highScoreText != null && currentStageData != null)
         {
             highScoreText.text = $"High Score: {GetHighScore(currentStageData.stageName)}";
         }
@@ -156,18 +165,13 @@ public class GameManager : MonoBehaviour
     // --- Game End Logic ---
     private void CheckGameEndConditions()
     {
-        // 失敗条件を先にチェック
         if (currentStageData.tasks.Any(task => task.IsFailed(this)))
         {
             TriggerGameOver("タスク失敗");
-            return;
         }
-
-        // 全てのタスクが完了したかチェック
-        if (currentStageData.tasks.All(task => task.IsCompleted(this)))
+        else if (currentStageData.tasks.All(task => task.IsCompleted(this)))
         {
             TriggerGameClear();
-            return;
         }
     }
 
@@ -176,14 +180,11 @@ public class GameManager : MonoBehaviour
         if (gameHasEnded)
             return;
         gameHasEnded = true;
+        Time.timeScale = 0f; // ゲームクリア時に時間を止める
 
-        int finalScore = CalculateFinalScore();
-        UpdateScoreUI(finalScore);
-        SaveHighScoreIfBetter(finalScore);
-
-        Debug.Log($"ゲームクリア！ スコア: {finalScore}");
-        // 2秒後にクリアシーンへ
-        Invoke(nameof(LoadGameClearScene), 2f);
+        SaveHighScoreIfBetter(currentScore);
+        Debug.Log($"ゲームクリア！ スコア: {currentScore}");
+        FadeManager.Instance.LoadScene("GameClearScene", 0.5f);
     }
 
     private void TriggerGameOver(string reason)
@@ -191,21 +192,14 @@ public class GameManager : MonoBehaviour
         if (gameHasEnded)
             return;
         gameHasEnded = true;
+        Time.timeScale = 0f; // ゲームオーバー時に時間を止める
 
-        int finalScore = CalculateFinalScore();
-        UpdateScoreUI(finalScore);
-
-        Debug.Log($"ゲームオーバー... 理由: {reason} スコア: {finalScore}");
-        // 2秒後にゲームオーバーシーンへ
-        Invoke(nameof(LoadGameOverScene), 2f);
+        Debug.Log($"ゲームオーバー... 理由: {reason} スコア: {currentScore}");
+        FadeManager.Instance.LoadScene("GameOverScene", 0.5f);
     }
 
-    private void LoadGameClearScene() => FadeManager.Instance.LoadScene("GameClearScene", 0.5f);
-
-    private void LoadGameOverScene() => FadeManager.Instance.LoadScene("GameOverScene", 0.5f);
-
     // --- Scoring Logic ---
-    private int CalculateFinalScore()
+    private int CalculateCurrentScore()
     {
         if (currentStageData == null)
             return 0;
@@ -213,9 +207,9 @@ public class GameManager : MonoBehaviour
         var coef = currentStageData.scoreCoefficients;
         int score = 0;
 
-        // 従来のスコア（これはBuildingBlock側で都度加算する方式から最終計算に変更しても良いが、一旦残す）
-        // score += ... (BuildingBlockから通知されたスコアを保持しておく変数が必要)
-        // 今回は最終計算で全て算出する方式に変更
+        // 地面・道路接触によるスコア
+        score += BlocksOnGroundCount * coef.blockOnGround;
+        score += BlocksOnRoadCount * coef.blockOnRoad;
 
         // ジョイント破壊ボーナス
         float jointDestructionRatio =
@@ -238,45 +232,27 @@ public class GameManager : MonoBehaviour
         return ((float)DestroyedBlockCount / InitialBlockCount) * 100f;
     }
 
-    // --- Data Persistence (PlayerPrefs) ---
+    // --- Data Persistence ---
     public void SaveHighScoreIfBetter(int newScore)
     {
         string key = HIGHSCORE_KEY_PREFIX + currentStageData.stageName;
-        int currentHighScore = PlayerPrefs.GetInt(key, 0);
-        if (newScore > currentHighScore)
+        if (newScore > PlayerPrefs.GetInt(key, 0))
         {
             PlayerPrefs.SetInt(key, newScore);
             PlayerPrefs.Save();
-            Debug.Log($"ハイスコア更新: {newScore} for {currentStageData.stageName}");
-            UpdateHighScoreUI();
         }
     }
 
-    public static int GetHighScore(string stageName)
-    {
-        return PlayerPrefs.GetInt(HIGHSCORE_KEY_PREFIX + stageName, 0);
-    }
+    public static int GetHighScore(string stageName) =>
+        PlayerPrefs.GetInt(HIGHSCORE_KEY_PREFIX + stageName, 0);
 
     public static void ResetAllHighScores()
     {
-        // 注意：これは全てのハイスコアを消します！
-        PlayerPrefs.DeleteAll(); // もしくは、キーを走査して消す
+        PlayerPrefs.DeleteAll();
         PlayerPrefs.Save();
-        Debug.Log("全てのハイスコアがリセットされました。");
     }
 
-    // --- Scene Navigation Support ---
-    public string GetLastPlayedSceneName()
-    {
-        if (currentStageData != null)
-        {
-            return SceneManager.GetActiveScene().name; // Or a specific name from StageData
-        }
-        return "SampleScene"; // Fallback
-    }
+    public string GetLastPlayedSceneName() => lastPlayedSceneName ?? "SampleScene";
 
-    public int GetFinalScore()
-    {
-        return CalculateFinalScore();
-    }
+    public int GetFinalScore() => currentScore;
 }
