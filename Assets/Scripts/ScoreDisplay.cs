@@ -1,3 +1,5 @@
+// --- ScoreDisplay.cs ---
+// ゲーム終了シーンで最終スコアを表示
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,22 +8,31 @@ public class ScoreDisplay : MonoBehaviour
     [Tooltip("スコアを表示するUI Textコンポーネント")]
     public Text scoreDisplayText;
 
+    [Tooltip("（オプション）ハイスコアを表示するUI Text")]
+    public Text highScoreDisplayText;
+
     void Start()
     {
-        if (scoreDisplayText == null)
-        {
-            Debug.LogError("ScoreDisplayText is not assigned in the inspector!", gameObject);
-            return;
-        }
-
         if (GameManager.Instance != null)
         {
-            scoreDisplayText.text = GameManager.Instance.GetFinalScore().ToString();
+            string lastScene = GameManager.Instance.GetLastPlayedSceneName();
+            int finalScore = GameManager.Instance.GetFinalScore();
+            int highScore = GameManager.GetHighScore(lastScene);
+
+            if (scoreDisplayText != null)
+            {
+                scoreDisplayText.text = finalScore.ToString();
+            }
+            if (highScoreDisplayText != null)
+            {
+                highScoreDisplayText.text = $"High Score: {highScore}";
+            }
         }
         else
         {
-            scoreDisplayText.text = "N/A"; // GameManagerが見つからない場合
-            Debug.LogError("GameManager instance not found. Cannot display score.", gameObject);
+            if (scoreDisplayText != null)
+                scoreDisplayText.text = "N/A";
+            Debug.LogError("GameManager instance not found.");
         }
     }
 }

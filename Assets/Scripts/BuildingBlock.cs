@@ -30,7 +30,8 @@ public class BuildingBlock : MonoBehaviour
 
     [Header("ゲーム設定")]
     [Tooltip("このY座標より下に落下した場合、オブジェクトは破壊される。")]
-    public float fallLimitY = -100f;
+    public float fallLimitY = -50f;
+    private bool hasBeenCountedForTask = false;
 
     [Header("デバッグ")]
     [Tooltip("接続半径をシーンビューに表示するかどうか。")]
@@ -40,7 +41,6 @@ public class BuildingBlock : MonoBehaviour
     private Rigidbody rb;
     private Renderer blockRenderer;
     private bool hasBeenScored = false;
-    private bool hasBeenCountedForTask = false;
 
     /// <summary>
     /// コンポーネントの参照を取得し、初期設定を行います。
@@ -48,11 +48,17 @@ public class BuildingBlock : MonoBehaviour
     void Awake()
     {
         // 必須コンポーネントをキャッシュ
-        rb = GetComponent<Rigidbody>();
-        blockRenderer = GetComponent<Renderer>();
-
+        GetComponent<Renderer>();
         // 自身の硬さに応じてマテリアルを設定
         SetMaterialBasedOnHardness();
+    }
+
+    private void SetMaterialBasedOnHardness()
+    {
+        if (hardMaterial == null || softMaterial == null)
+            return;
+
+        blockRenderer.material = (breakForce >= hardnessThreshold) ? hardMaterial : softMaterial;
     }
 
     /// <summary>
@@ -64,72 +70,48 @@ public class BuildingBlock : MonoBehaviour
         CheckFallLimit();
     }
 
-    /// <summary>
-    /// 他のColliderと衝突した際に呼ばれます。
-    /// </summary>
     void OnCollisionEnter(Collision collision)
     {
-        // GameManagerが見つからない場合は処理を中断
         if (GameManager.Instance == null)
             return;
 
         string contactTag = collision.gameObject.tag;
 
-        // --- スコア処理 ---
-        if (!hasBeenScored)
-        {
-            if (contactTag == "Ground")
-            {
-                GameManager.Instance.AddScore(100);
-                hasBeenScored = true;
-            }
-            else if (contactTag == "Road")
-            {
-                GameManager.Instance.AddScore(-50);
-                hasBeenScored = true;
-            }
-        }
-
-        // --- タスク1（破壊率）のカウント処理 ---
+        // 地面または道路に接触したら「破壊済み」としてカウント
         if (!hasBeenCountedForTask && (contactTag == "Ground" || contactTag == "Road"))
         {
             GameManager.Instance.NotifyBlockDestroyed();
             hasBeenCountedForTask = true;
         }
 
-        // --- タスク2（道路接触）の通知処理 ---
+        // 道路接触を通知
         if (contactTag == "Road")
         {
             GameManager.Instance.NotifyRoadContact();
         }
     }
 
-    /// <summary>
-    /// ブロックの硬さ(breakForce)に基づいてマテリアルを動的に変更します。
-    /// </summary>
-    private void SetMaterialBasedOnHardness()
-    {
-        if (hardMaterial == null || softMaterial == null)
-            return;
-
-        blockRenderer.material = (breakForce >= hardnessThreshold) ? hardMaterial : softMaterial;
-    }
-
-    /// <summary>
-    /// ブロックが一定の高さより下に落下した場合に自身を破壊します。
-    /// </summary>
     private void CheckFallLimit()
     {
-        if (transform.position.y < fallLimitY)
+        if (transform.position.y < fallLimitY && !hasBeenCountedForTask)
         {
-            // 落下による破壊もタスクのカウント対象にする
-            if (!hasBeenCountedForTask && GameManager.Instance != null)
+            if (GameManager.Instance != null)
             {
                 GameManager.Instance.NotifyBlockDestroyed();
                 hasBeenCountedForTask = true;
             }
-            // オブジェクトをシーンから削除
-            Destroy(gameObject);
+            // 落下したブロックは非表示にするか、Destroyしても良い
+            gameObject.SetActive(false);
+        }
+    }
+
+    // ジョイントが破壊された時にUnityから自動的に呼ばれる
+    void OnJointBreak(float breakForce)
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.NotifyJointDestroyed();
+            Debug.Log("Joint broken!");
         }
     }
 }

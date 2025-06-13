@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d95d28abd8a30ff41bce6649e808e786, type: 3}
+  m_Name: Stage2Data
+  m_EditorClassIdentifier: 
+  stageName: Stage2
+  tasks:
+  - {fileID: 11400000, guid: 79fef43f48233b84da6bfe0f657beb6f, type: 2}
+  - {fileID: 11400000, guid: 52d4a7ba45d805343b893c100bc326c9, type: 2}
+  scoreCoefficients:
+    blockOnGround: 100
+    blockOnRoad: -50
+    jointDestructionBonus: 100
+    itemUsedPenalty: -1000
+    timePenalty: -10

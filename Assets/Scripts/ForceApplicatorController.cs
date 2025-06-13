@@ -137,35 +137,32 @@ public class ForceApplicatorController : MonoBehaviour
     private void ApplyForceAndStartEffect()
     {
         if (mainCamera == null)
-        {
-            Debug.LogError("メインカメラが見つかりません。");
             return;
-        }
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
-            // ========== ここから追加 ==========
-            // SoundManagerを使って効果音を再生
+            // GameManagerに使用を通知
+            if (GameManager.Instance != null)
+            {
+                GameManager.Instance.NotifyForceUsed();
+            }
+
             if (SoundManager.Instance != null && forceSound != null)
             {
                 SoundManager.Instance.PlaySE(forceSound);
             }
-            // ========== ここまで追加 ==========
 
-            // 力を加える処理
             Rigidbody targetRb = hit.collider.GetComponentInParent<Rigidbody>();
             if (targetRb != null)
             {
-                Vector3 forceDirection = ray.direction;
                 targetRb.AddForceAtPosition(
-                    forceDirection * forceMagnitude,
+                    ray.direction * forceMagnitude,
                     hit.point,
                     ForceMode.Impulse
                 );
             }
 
-            // エフェクトを生成・再生する処理
             if (forceEffectPrefab != null)
             {
                 StopForceEffect();

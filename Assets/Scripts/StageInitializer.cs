@@ -1,8 +1,15 @@
+// --- StageInitializer.cs ---
+// GameManagerにどのステージの設定を読み込ませるかを指定します。
 using UnityEngine;
 using UnityEngine.UI;
 
 public class StageInitializer : MonoBehaviour
 {
+    [Header("このステージの設定ファイル")]
+    [Tooltip("このステージで使用するStageDataアセット")]
+    [SerializeField]
+    private StageData stageData;
+
     [Header("UI References in this Scene")]
     [Tooltip("このステージのスコア表示用UI Text")]
     public Text scoreTextForThisScene;
@@ -10,42 +17,30 @@ public class StageInitializer : MonoBehaviour
     [Tooltip("このステージのタスク表示用UI Text")]
     public Text taskDisplayTextForThisScene;
 
+    [Tooltip("このステージのハイスコア表示用UI Text")]
+    public Text highScoreTextForThisScene;
+
     void Start()
     {
+        if (stageData == null)
+        {
+            Debug.LogError("StageDataが設定されていません！", gameObject);
+            return;
+        }
+
         if (GameManager.Instance != null)
         {
-            if (scoreTextForThisScene != null)
-            {
-                GameManager.Instance.scoreText = scoreTextForThisScene;
-            }
-            else
-            {
-                Debug.LogWarning(
-                    "StageInitializer: ScoreTextForThisScene is not assigned. GameManager's score UI might not update correctly.",
-                    gameObject
-                );
-            }
+            // GameManagerにUI参照を渡す
+            GameManager.Instance.scoreText = scoreTextForThisScene;
+            GameManager.Instance.taskDisplayText = taskDisplayTextForThisScene;
+            GameManager.Instance.highScoreText = highScoreTextForThisScene;
 
-            if (taskDisplayTextForThisScene != null)
-            {
-                GameManager.Instance.taskDisplayText = taskDisplayTextForThisScene;
-            }
-            else
-            {
-                Debug.LogWarning(
-                    "StageInitializer: TaskDisplayTextForThisScene is not assigned. GameManager's task UI might not update correctly.",
-                    gameObject
-                );
-            }
-
-            GameManager.Instance.InitializeGame();
+            // ゲームの初期化
+            GameManager.Instance.InitializeGame(stageData);
         }
         else
         {
-            Debug.LogError(
-                "GameManager instance not found. Cannot initialize game for the stage.",
-                gameObject
-            );
+            Debug.LogError("GameManagerが見つかりません。", gameObject);
         }
     }
 }

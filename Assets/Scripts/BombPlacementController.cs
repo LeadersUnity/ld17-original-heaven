@@ -278,11 +278,19 @@ public class BombPlacementController : MonoBehaviour
         UnfreezeBuildingBlocksIfNecessary();
         if (placedBombs.Count == 0)
             return;
+
+        // GameManagerに使用した爆弾の数を通知
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.NotifyBombUsed(placedBombs.Count);
+        }
+
         List<Bomb> bombsToExplode = new List<Bomb>(placedBombs);
         foreach (Bomb bomb in bombsToExplode)
         {
             bomb?.ForceExplode();
         }
+        // placedBombsリストはRemoveBombFromListでクリアされる
     }
 
     private void RemoveBombFromList(Bomb bomb)
