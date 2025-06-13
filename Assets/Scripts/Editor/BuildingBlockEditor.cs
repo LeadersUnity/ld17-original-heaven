@@ -1,127 +1,116 @@
+using System.Collections.Generic;
+using UnityEditor; // Editorスクリプトには必須
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 /// <summary>
-/// マウスクリックでオブジェクトに力を加える「フォースモード」を管理するコントローラー。
+/// BuildingBlockの接続をエディタ上で行うためのカスタムエディタスクリプト。
 /// </summary>
-public class ForceApplicatorController : MonoBehaviour
+public class BuildingBlockEditor
 {
-    [Header("モード設定")]
-    [Tooltip("フォースモードが有効かどうか")]
-    [SerializeField]
-    private bool isForceModeActive = false;
-
-    [Header("フォース設定")]
-    [Tooltip("加える力の大きさ")]
-    [SerializeField]
-    private float forceMagnitude = 500f;
-
-    [Header("UI設定")]
-    [Tooltip("モードを切り替えるUIボタン")]
-    [SerializeField]
-    private Button forceModeButton;
-
-    [Tooltip("ボタンの通常時の色")]
-    [SerializeField]
-    private Color buttonNormalColor = Color.white;
-
-    [Tooltip("ボタンのフォースモード有効時の色")]
-    [SerializeField]
-    private Color buttonActiveColor = new Color(0.5f, 1f, 0.5f);
-
-    [Header("外部コンポーネント参照")]
-    [Tooltip("無効化対象の爆弾設置コントローラー")]
-    [SerializeField]
-    private BombPlacementController bombPlacementController;
-
-    private Camera mainCamera;
-    private Image buttonImage;
-
-    void Awake()
+    // Unityの上部メニューに "Tools/Building Destructor/Connect All Blocks" を追加
+    [MenuItem("Tools/Building Destructor/Connect All Blocks")]
+    private static void ConnectAllBlocksInScene()
     {
-        mainCamera = Camera.main;
-
-        if (forceModeButton != null)
+        // シーン内のBuildingBlockをすべて検索
+        BuildingBlock[] allBlocks = Object.FindObjectsOfType<BuildingBlock>();
+        if (allBlocks.Length == 0)
         {
-            forceModeButton.onClick.AddListener(ToggleForceMode);
-            buttonImage = forceModeButton.GetComponent<Image>();
-        }
-        else
-        {
-            Debug.LogError("Force Mode Buttonが設定されていません。");
-        }
-
-        if (bombPlacementController == null)
-        {
-            bombPlacementController = FindObjectOfType<BombPlacementController>();
-        }
-    }
-
-    void Start()
-    {
-        UpdateVisualsAndControllers();
-    }
-
-    // ========== ここから追加 ==========
-    void OnDestroy()
-    {
-        // コンポーネントが破棄される際に、登録したリスナーを解除する
-        if (forceModeButton != null)
-        {
-            forceModeButton.onClick.RemoveListener(ToggleForceMode);
-        }
-    }
-
-    // ========== ここまで追加 ==========
-
-    void Update()
-    {
-        if (!isForceModeActive)
+            Debug.LogWarning("No BuildingBlocks found in the scene.");
             return;
-
-        if (Input.GetMouseButtonDown(0))
-        {
-            if (EventSystem.current.IsPointerOverGameObject())
-                return;
-            ApplyForceAtMousePosition();
-        }
-    }
-
-    public void ToggleForceMode()
-    {
-        isForceModeActive = !isForceModeActive;
-        UpdateVisualsAndControllers();
-    }
-
-    private void UpdateVisualsAndControllers()
-    {
-        if (bombPlacementController != null)
-        {
-            bombPlacementController.enabled = !isForceModeActive;
         }
 
-        if (buttonImage != null)
-        {
-            buttonImage.color = isForceModeActive ? buttonActiveColor : buttonNormalColor;
-        }
-    }
+        // まず既存のジョイントをすべて削除して初期化する
+        ClearAllJoints(allBlocks);
 
-    private void ApplyForceAtMousePosition()
-    {
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit))
+        // 接続処理（アプローチ1とほぼ同じロジック）
+        var blockDictionary = new Dictionary<Rigidbody, BuildingBlock>();
+        foreach (var block in allBlocks)
         {
-            Rigidbody targetRb = hit.collider.GetComponentInParent<Rigidbody>();
-            if (targetRb != null)
+            Rigidbody rb = block.GetComponent<Rigidbody>();
+            if (rb != null && !blockDictionary.ContainsKey(rb))
             {
-                Vector3 forceDirection = ray.direction;
-                targetRb.AddForceAtPosition(
-                    forceDirection * forceMagnitude,
-                    hit.point,
-                    ForceMode.Impulse
-                );
+                blockDictionary.Add(rb, block);
             }
+        }
+
+        int jointCount = 0;
+        foreach (var block in allBlocks)
+        {
+            Rigidbody currentRb = block.GetComponent<Rigidbody>();
+            Collider[] colliders = Physics.OverlapSphere(
+                block.transform.position,
+                block.connectionRadius
+            );
+
+            foreach (var hitCollider in colliders)
+            {
+                Rigidbody connectedRb = hitCollider.attachedRigidbody;
+                if (connectedRb == null || connectedRb == currentRb)
+                    continue;
+
+                if (blockDictionary.ContainsKey(connectedRb))
+                {
+                    bool alreadyConnected = false;
+                    foreach (var joint in block.GetComponents<FixedJoint>())
+                    {
+                        if (joint.connectedBody == connectedRb)
+                        {
+                            alreadyConnected = true;
+                            break;
+                        }
+                    }
+
+                    // エディタスクリプトでは、相手側からのチェックも念のため入れておくとより安全
+                    foreach (var joint in connectedRb.GetComponents<FixedJoint>())
+                    {
+                        if (joint.connectedBody == currentRb)
+                        {
+                            alreadyConnected = true;
+                            break;
+                        }
+                    }
+
+                    if (!alreadyConnected)
+                    {
+                        BuildingBlock otherBlock = blockDictionary[connectedRb];
+                        FixedJoint newJoint = block.gameObject.AddComponent<FixedJoint>();
+                        newJoint.connectedBody = connectedRb;
+                        newJoint.breakForce = Mathf.Min(block.breakForce, otherBlock.breakForce);
+                        newJoint.breakTorque = Mathf.Min(block.breakTorque, otherBlock.breakTorque);
+
+                        // 変更をシーンに保存するようマークする
+                        EditorUtility.SetDirty(block);
+                        jointCount++;
+                    }
+                }
+            }
+        }
+
+        Debug.Log(
+            $"Successfully connected {allBlocks.Length} blocks with {jointCount} new joints. Remember to save your scene!"
+        );
+    }
+
+    // 既存のジョイントをクリアするためのメニュー項目
+    [MenuItem("Tools/Building Destructor/Clear All Joints")]
+    private static void ClearAllJointsMenu()
+    {
+        BuildingBlock[] allBlocks = Object.FindObjectsOfType<BuildingBlock>();
+        ClearAllJoints(allBlocks);
+        Debug.Log("Cleared all FixedJoints from BuildingBlocks. Remember to save your scene!");
+    }
+
+    private static void ClearAllJoints(BuildingBlock[] blocks)
+    {
+        foreach (var block in blocks)
+        {
+            FixedJoint[] joints = block.GetComponents<FixedJoint>();
+            foreach (var joint in joints)
+            {
+                // エディタ上でのコンポーネント削除はDestroyImmediateを使う
+                Object.DestroyImmediate(joint);
+            }
+            EditorUtility.SetDirty(block);
         }
     }
 }

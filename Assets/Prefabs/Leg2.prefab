@@ -52,6 +52,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NSBlock (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 4951714757566830777, guid: 359e0958077d28f498b82513a0360aff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: e58129af521b95c48a879f36fc761942, type: 2}
     - target: {fileID: 6050229801311151975, guid: 359e0958077d28f498b82513a0360aff, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1
@@ -176,6 +180,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NSBlock (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 4951714757566830777, guid: 359e0958077d28f498b82513a0360aff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: e58129af521b95c48a879f36fc761942, type: 2}
     - target: {fileID: 6050229801311151975, guid: 359e0958077d28f498b82513a0360aff, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -238,6 +246,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NSBlock
       objectReference: {fileID: 0}
+    - target: {fileID: 4951714757566830777, guid: 359e0958077d28f498b82513a0360aff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: e58129af521b95c48a879f36fc761942, type: 2}
     - target: {fileID: 6050229801311151975, guid: 359e0958077d28f498b82513a0360aff, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -300,6 +312,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NSBlock (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 4951714757566830777, guid: 359e0958077d28f498b82513a0360aff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: d1480028b85a39a4ab7009364ec6a1f2, type: 2}
     - target: {fileID: 6050229801311151975, guid: 359e0958077d28f498b82513a0360aff, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1
@@ -362,6 +378,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NSBlock (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 4951714757566830777, guid: 359e0958077d28f498b82513a0360aff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: d1480028b85a39a4ab7009364ec6a1f2, type: 2}
     - target: {fileID: 6050229801311151975, guid: 359e0958077d28f498b82513a0360aff, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1
@@ -424,6 +444,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NSBlock (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 4951714757566830777, guid: 359e0958077d28f498b82513a0360aff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: d1480028b85a39a4ab7009364ec6a1f2, type: 2}
     - target: {fileID: 6050229801311151975, guid: 359e0958077d28f498b82513a0360aff, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1
@@ -486,6 +510,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NSBlock (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 4951714757566830777, guid: 359e0958077d28f498b82513a0360aff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: d1480028b85a39a4ab7009364ec6a1f2, type: 2}
     - target: {fileID: 6050229801311151975, guid: 359e0958077d28f498b82513a0360aff, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1
@@ -548,6 +576,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: NSBlock (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 4951714757566830777, guid: 359e0958077d28f498b82513a0360aff, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: e58129af521b95c48a879f36fc761942, type: 2}
     - target: {fileID: 6050229801311151975, guid: 359e0958077d28f498b82513a0360aff, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1
