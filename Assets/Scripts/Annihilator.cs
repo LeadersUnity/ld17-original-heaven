@@ -8,24 +8,35 @@ public class Annihilator : MonoBehaviour
     [SerializeField]
     private AnnihilationEffectController annihilationEffectPrefab;
 
-    // AnnihilatorPlacementControllerが自身の破棄を検知するためのイベント
     public event Action<Annihilator> OnAnnihilatorDestroyed;
 
-    /// <summary>
-    /// 消滅効果を起動します。
-    /// </summary>
     public void Activate()
     {
-        // 消滅エフェクトを生成
         if (annihilationEffectPrefab != null)
         {
-            Instantiate(annihilationEffectPrefab, transform.position, Quaternion.identity);
+            // エフェクトプレハブを生成し、そのインスタンスへの参照を取得
+            AnnihilationEffectController effectInstance = Instantiate(
+                annihilationEffectPrefab,
+                transform.position,
+                Quaternion.identity
+            );
+
+            // 【修正】生成したインスタンスに対して、エフェクト開始命令を送る
+            effectInstance.ActivateEffect();
+        }
+        else
+        {
+            Debug.LogError(
+                "Annihilatorプレハブに、AnnihilationEffectPrefabが設定されていません！",
+                this.gameObject
+            );
         }
 
-        // Annihilatorが破壊される直前にイベントを開始
         OnAnnihilatorDestroyed?.Invoke(this);
 
-        // Annihilator自体をシーンから消す
-        Destroy(gameObject);
+        // 自身は見た目を消して、一定時間後に安全に破棄する
+        gameObject.GetComponent<Renderer>().enabled = false;
+        gameObject.GetComponent<Collider>().enabled = false;
+        Destroy(gameObject, 2.0f);
     }
 }
