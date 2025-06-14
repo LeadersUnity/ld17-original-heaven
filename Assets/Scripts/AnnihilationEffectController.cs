@@ -37,13 +37,6 @@ public class AnnihilationEffectController : MonoBehaviour
         {
             effect.Play(true);
         }
-        else
-        {
-            Debug.LogError(
-                "このエフェクトプレハブにParticleSystemがアタッチされていません。",
-                this.gameObject
-            );
-        }
 
         if (sfx != null)
         {

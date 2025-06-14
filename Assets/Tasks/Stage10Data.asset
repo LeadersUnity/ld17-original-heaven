@@ -15,7 +15,6 @@ MonoBehaviour:
   stageName: Stage10
   tasks:
   - {fileID: 11400000, guid: 2ac39bab23a67b14d808ab191fe57b4c, type: 2}
-  - {fileID: 11400000, guid: 52d4a7ba45d805343b893c100bc326c9, type: 2}
   scoreCoefficients:
     blockOnGround: 100
     blockOnRoad: -50
