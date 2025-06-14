@@ -3,40 +3,74 @@ using UnityEngine;
 
 public class Annihilator : MonoBehaviour
 {
-    [Header("消滅エフェクトのPrefab")]
-    [Tooltip("起動時に生成されるエフェクトのプレハブ")]
+    // --- 外部プレハブ設定 ---
+    [Header("エフェクト設定")]
+    [Tooltip("起動時に生成される、AnnihilationEffectControllerを持つプレハブ")]
     [SerializeField]
     private AnnihilationEffectController annihilationEffectPrefab;
 
+    [Header("効果設定")]
+    [Tooltip("オブジェクトを破壊する効果範囲の半径")]
+    [SerializeField]
+    private float annihilationRadius = 5f;
+
+    // --- イベント ---
     public event Action<Annihilator> OnAnnihilatorDestroyed;
 
+    /// <summary>
+    /// 消滅効果を起動する
+    /// </summary>
     public void Activate()
     {
+        // 1. 自分を管理リストから削除してもらうよう通知
+        OnAnnihilatorDestroyed?.Invoke(this);
+
+        // 2. 破壊ロジックを実行
+        AnnihilateTargets();
+
+        // 3. 外部のエフェクトプレハブを生成し、再生命令を送る
         if (annihilationEffectPrefab != null)
         {
-            // エフェクトプレハブを生成し、そのインスタンスへの参照を取得
+            // プレハブを生成
             AnnihilationEffectController effectInstance = Instantiate(
                 annihilationEffectPrefab,
                 transform.position,
                 Quaternion.identity
             );
 
-            // 【修正】生成したインスタンスに対して、エフェクト開始命令を送る
-            effectInstance.ActivateEffect();
+            // 生成したインスタンスに再生を命令
+            effectInstance.Play();
         }
         else
         {
             Debug.LogError(
-                "Annihilatorプレハブに、AnnihilationEffectPrefabが設定されていません！",
+                "Annihilatorに、annihilationEffectPrefabが設定されていません！",
                 this.gameObject
             );
         }
 
-        OnAnnihilatorDestroyed?.Invoke(this);
+        // 4. Annihilator本体は、役割を終えたので即座に破棄
+        Destroy(gameObject);
+    }
 
-        // 自身は見た目を消して、一定時間後に安全に破棄する
-        gameObject.GetComponent<Renderer>().enabled = false;
-        gameObject.GetComponent<Collider>().enabled = false;
-        Destroy(gameObject, 2.0f);
+    private void AnnihilateTargets()
+    {
+        Collider[] hitColliders = Physics.OverlapSphere(transform.position, annihilationRadius);
+
+        foreach (var hitCollider in hitColliders)
+        {
+            BuildingBlock block = hitCollider.GetComponentInParent<BuildingBlock>();
+            if (block != null)
+            {
+                block.Annihilate();
+            }
+        }
+    }
+
+    // デバッグ用に効果範囲をシーンビューに表示
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.magenta;
+        Gizmos.DrawWireSphere(transform.position, annihilationRadius);
     }
 }

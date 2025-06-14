@@ -146,4 +146,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fc64bd2f43860e043b7976f39a44a2e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  annihilationEffectPrefab: {fileID: 2970551633469189062, guid: cfcca338dd95c2444810704a84e3c18a, type: 3}
+  annihilationEffectPrefab: {fileID: 8133804477594557501, guid: db22fd775ec24f84e8de6f46b570fad4, type: 3}
+  annihilationRadius: 2
