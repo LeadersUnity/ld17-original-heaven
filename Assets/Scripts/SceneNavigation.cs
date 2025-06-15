@@ -1,3 +1,4 @@
+// SceneNavigation.cs
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,7 +18,14 @@ public class SceneNavigation : MonoBehaviour
     public void RestartLastPlayedScene()
     {
         Time.timeScale = 1f; // 時間を元に戻す
-        string sceneNameToLoad = GameManager.Instance.GetLastPlayedSceneName();
+        // --- ▼▼▼ 修正点 ▼▼▼ ---
+        // GameManagerから最後にプレイしたシーン名を取得
+        string sceneNameToLoad =
+            (GameManager.Instance != null)
+                ? GameManager.Instance.GetLastPlayedSceneName()
+                : "SampleScene"; // GameManagerがない場合のフォールバック
+        // --- ▲▲▲ 修正点 ▲▲▲ ---
+
         if (!string.IsNullOrEmpty(sceneNameToLoad))
         {
             FadeManager.Instance.LoadScene(sceneNameToLoad, 0.3f);
@@ -44,15 +52,18 @@ public class SceneNavigation : MonoBehaviour
 #endif
     }
 
+    // --- ▼▼▼ このメソッドの内部を修正 ▼▼▼ ---
     /// <summary>
-    /// 全てのハイスコアをリセットします。タイトル画面のボタンなどに設定します。
+    /// 全てのハイスコアとステージアンロック情報をリセットします。
     /// </summary>
-    public void ResetAllHighScores()
+    public void ResetAllProgress() // メソッド名も合わせて変更
     {
-        GameManager.ResetAllHighScores();
-        Debug.Log("All high scores have been reset.");
+        // 呼び出すメソッド名を ResetAllProgress に変更
+        GameManager.ResetAllProgress();
+        Debug.Log("All high scores and level unlocks have been reset.");
 
-        // タイトル画面にハイスコア表示があるなら、それを更新する処理も必要
-        // 例: FindObjectOfType<TitleScreenUI>()?.UpdateHighScoreDisplay();
+        // (オプション) タイトル画面に戻るなどの処理
+        // LoadSceneByName("TitleScene");
     }
+    // --- ▲▲▲ 修正点 ▲▲▲ ---
 }

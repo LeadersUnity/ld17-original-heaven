@@ -12,7 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d95d28abd8a30ff41bce6649e808e786, type: 3}
   m_Name: Stage10Data
   m_EditorClassIdentifier: 
+  stageId: Stage_10
+  sceneName: Stage10
   stageName: Stage10
+  scoreToUnlockNextLevel: 10000
+  nextStage: {fileID: 0}
   tasks:
   - {fileID: 11400000, guid: 2ac39bab23a67b14d808ab191fe57b4c, type: 2}
   scoreCoefficients:
