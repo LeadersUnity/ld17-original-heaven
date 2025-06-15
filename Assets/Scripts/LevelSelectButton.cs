@@ -29,23 +29,35 @@ public class LevelSelectButton : MonoBehaviour
     {
         assignedStage = stageData;
 
-        // UI表示の更新
-        stageNameText.text = stageData.stageName;
-        highScoreText.text = $"High Score: {highScore}";
+        // --- ▼▼▼ ロジックをここから修正 ▼▼▼ ---
 
         if (isUnlocked)
         {
-            // アンロック状態
+            // アンロック状態の処理
             lockIcon.SetActive(false);
             buttonComponent.interactable = true;
             buttonComponent.onClick.AddListener(LoadStageScene);
+
+            // テキストを表示状態にする
+            stageNameText.gameObject.SetActive(true);
+            highScoreText.gameObject.SetActive(true);
+
+            // UI表示の更新
+            stageNameText.text = stageData.stageName;
+            // 「High Score:」の文字列を削除し、スコアの数値のみ表示
+            highScoreText.text = highScore.ToString();
         }
         else
         {
-            // ロック状態
+            // ロック状態の処理
             lockIcon.SetActive(true);
             buttonComponent.interactable = false;
+
+            // テキストを非表示状態にする
+            stageNameText.gameObject.SetActive(false);
+            highScoreText.gameObject.SetActive(false);
         }
+        // --- ▲▲▲ 修正ここまで ▲▲▲ ---
     }
 
     private void LoadStageScene()
