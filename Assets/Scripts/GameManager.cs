@@ -18,7 +18,7 @@ public class GameManager : MonoBehaviour
     private bool gameHasEnded = false;
     private int currentScore = 0;
     private string lastPlayedSceneName;
-    private string lastPlayedStageId; // StageIdを保持
+    private string lastPlayedStageId;
 
     public int InitialBlockCount { get; private set; }
     public int DestroyedBlockCount { get; private set; }
@@ -53,14 +53,14 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f;
         currentStageData = stageData;
         lastPlayedSceneName = SceneManager.GetActiveScene().name;
-        lastPlayedStageId = currentStageData.stageId; // StageIdを保存
+        lastPlayedStageId = currentStageData.stageId;
         gameHasEnded = false;
 
-        InitialBlockCount = FindObjectsOfType<BuildingBlock>().Length; //
+        InitialBlockCount = FindObjectsOfType<BuildingBlock>().Length;
         DestroyedBlockCount = 0;
         BlocksOnGroundCount = 0;
         BlocksOnRoadCount = 0;
-        InitialJointCount = FindObjectsOfType<Joint>().Length; //
+        InitialJointCount = FindObjectsOfType<Joint>().Length;
         DestroyedJointCount = 0;
         BombUsedCount = 0;
         ForceUsedCount = 0;
@@ -80,14 +80,45 @@ public class GameManager : MonoBehaviour
     {
         if (gameHasEnded || currentStageData == null)
             return;
-        ElapsedTime += Time.deltaTime; //
+        ElapsedTime += Time.deltaTime;
         currentScore = CalculateCurrentScore();
         UpdateScoreUI(currentScore);
         UpdateTaskDisplayUI();
         CheckGameEndConditions();
     }
 
-    // --- ▼▼▼ TriggerGameClearメソッドを修正 ▼▼▼ ---
+    // --- ▼▼▼ このメソッドを修正 ▼▼▼ ---
+    private void UpdateTaskDisplayUI()
+    {
+        if (taskDisplayText == null || currentStageData == null)
+            return;
+
+        StringBuilder sb = new StringBuilder();
+
+        // 次のステージが存在し、かつ、まだアンロックされていない場合にのみ条件を表示する
+        if (
+            currentStageData.nextStage != null
+            && !LevelManager.IsLevelUnlocked(currentStageData.nextStage.stageId)
+        )
+        {
+            // 表示する文字の色を青色に変更
+            sb.AppendLine(
+                $"<color=blue>次のステージ解放スコア: {currentStageData.scoreToUnlockNextLevel}点</color>"
+            );
+            sb.AppendLine(); // タスクとの間に一行空白を入れる
+        }
+
+        // 既存のタスク表示ロジック
+        foreach (var task in currentStageData.tasks)
+        {
+            sb.AppendLine(task.GetDisplayText(this));
+        }
+        taskDisplayText.text = sb.ToString();
+    }
+
+    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
+
+    // --- 以下、既存のメソッド (変更なし) ---
     private void TriggerGameClear()
     {
         if (gameHasEnded)
@@ -95,49 +126,34 @@ public class GameManager : MonoBehaviour
         gameHasEnded = true;
         Time.timeScale = 0f;
         SaveHighScoreIfBetter(currentScore);
-
-        // --- アンロック処理を追加 ---
         CheckAndUnlockNextLevel();
-
         Debug.Log($"ゲームクリア！ スコア: {currentScore}");
-        FadeManager.Instance.LoadScene("GameClearScene", 0.5f); //
+        FadeManager.Instance.LoadScene("GameClearScene", 0.5f);
     }
 
-    // --- ▲▲▲ 変更点 ▲▲▲ ---
-
-    // --- ▼▼▼ 新規メソッドを追加 ▼▼▼ ---
-    /// <summary>
-    /// スコアが条件を満たしていれば次のステージをアンロックします。
-    /// </summary>
     private void CheckAndUnlockNextLevel()
     {
         if (currentStageData == null || currentStageData.nextStage == null)
-        {
-            // 次のステージが設定されていない
             return;
-        }
-
         if (currentScore >= currentStageData.scoreToUnlockNextLevel)
         {
             LevelManager.UnlockLevel(currentStageData.nextStage.stageId);
         }
     }
 
-    // --- ▲▲▲ 変更点 ▲▲▲ ---
-
     private void TriggerGameOver(string reason)
     {
         if (gameHasEnded)
             return;
         gameHasEnded = true;
-        Time.timeScale = 0f; //
+        Time.timeScale = 0f;
         Debug.Log($"ゲームオーバー... 理由: {reason} スコア: {currentScore}");
-        FadeManager.Instance.LoadScene("GameOverScene", 0.5f); //
+        FadeManager.Instance.LoadScene("GameOverScene", 0.5f);
     }
 
     public void SaveHighScoreIfBetter(int newScore)
     {
-        string key = HIGHSCORE_KEY_PREFIX + lastPlayedStageId; // stageNameからstageIdに変更
+        string key = HIGHSCORE_KEY_PREFIX + lastPlayedStageId;
         if (newScore > PlayerPrefs.GetInt(key, 0))
         {
             PlayerPrefs.SetInt(key, newScore);
@@ -145,11 +161,9 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // stageNameからstageIdをキーにするように変更
     public static int GetHighScore(string stageId) =>
         PlayerPrefs.GetInt(HIGHSCORE_KEY_PREFIX + stageId, 0);
 
-    // 全てのハイスコアとアンロック情報をリセット
     public static void ResetAllProgress()
     {
         PlayerPrefs.DeleteAll();
@@ -157,77 +171,64 @@ public class GameManager : MonoBehaviour
         Debug.Log("All high scores and level unlocks have been reset.");
     }
 
-    public string GetLastPlayedSceneName() => lastPlayedSceneName ?? "SampleScene"; //
+    public string GetLastPlayedSceneName() => lastPlayedSceneName ?? "SampleScene";
 
     public string GetLastPlayedStageId() => lastPlayedStageId ?? "";
 
-    public int GetFinalScore() => currentScore; //
+    public int GetFinalScore() => currentScore;
 
-    // --- 以下、既存のメソッド (変更なし) ---
     public void NotifyBlockDestroyed()
     {
         if (!gameHasEnded)
             DestroyedBlockCount++;
-    } //
+    }
 
     public void NotifyBlockOnGround()
     {
         if (!gameHasEnded)
             BlocksOnGroundCount++;
-    } //
+    }
 
     public void NotifyBlockOnRoad()
     {
         if (!gameHasEnded)
             BlocksOnRoadCount++;
-    } //
+    }
 
     public void NotifyRoadContact()
     {
         if (!gameHasEnded)
             HasContactedRoad = true;
-    } //
+    }
 
     public void NotifyJointDestroyed()
     {
         if (!gameHasEnded)
             DestroyedJointCount++;
-    } //
+    }
 
     public void NotifyBombUsed(int count = 1)
     {
         if (!gameHasEnded)
             BombUsedCount += count;
-    } //
+    }
 
     public void NotifyForceUsed(int count = 1)
     {
         if (!gameHasEnded)
             ForceUsedCount += count;
-    } //
+    }
 
     public void NotifyAnnihilatorUsed(int count = 1)
     {
         if (!gameHasEnded)
             AnnihilatorUsedCount += count;
-    } //
+    }
 
     private void UpdateScoreUI(int score)
     {
         if (scoreText != null)
             scoreText.text = score.ToString();
-    } //
-
-    private void UpdateTaskDisplayUI()
-    {
-        if (taskDisplayText == null || currentStageData == null)
-            return;
-        StringBuilder sb = new StringBuilder();
-        foreach (var task in currentStageData.tasks)
-        {
-            sb.AppendLine(task.GetDisplayText(this));
-        }
-        taskDisplayText.text = sb.ToString();
     }
 
     private void UpdateHighScoreUI()

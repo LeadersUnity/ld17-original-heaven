@@ -15,7 +15,7 @@ MonoBehaviour:
   stageId: Stage_01
   sceneName: Stage1
   stageName: Stage1
-  scoreToUnlockNextLevel: 10000
+  scoreToUnlockNextLevel: 1000
   nextStage: {fileID: 11400000, guid: d3f4a25857ee9514aab31ce7dd21f5da, type: 2}
   tasks:
   - {fileID: 11400000, guid: 7969b1e1956231b45ad7bf3a19552915, type: 2}
