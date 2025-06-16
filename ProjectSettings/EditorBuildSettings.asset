@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/StageSelectScene.unity
     guid: 90d35a90507dbeb4788b34329706ce48
   - enabled: 1
+    path: Assets/Scenes/SettingScene.unity
+    guid: a04961211ccd9814cab59bd0eaf44203
+  - enabled: 1
     path: Assets/Scenes/Stage1.unity
     guid: 5896d5a8a5fa506468492f76d2ef6775
   - enabled: 1
@@ -19,7 +22,7 @@ EditorBuildSettings:
     guid: 4599c7fda0be29c4099fd5607dbd8842
   - enabled: 1
     path: Assets/Scenes/Stage3.unity
-    guid: f47462815aa843d449da5b536450aec5
+    guid: 29c0c897d2a2f654097f575664add040
   - enabled: 1
     path: Assets/Scenes/Stage4.unity
     guid: aec517697648b2945bdbd811b19e237b
@@ -40,11 +43,11 @@ EditorBuildSettings:
     guid: d76c147e0977b4147b906bf5c1af424a
   - enabled: 1
     path: Assets/Scenes/Stage10.unity
-    guid: 9d22eaada6a62b54fb4dffa433bcd9c4
+    guid: 5dbfd4d66a372c749a05935b6ba8bcf3
   - enabled: 1
     path: Assets/Scenes/GameClearScene.unity
     guid: a047b6b110fef04418e1060d42055d87
   - enabled: 1
     path: Assets/Scenes/GameOverScene.unity
-    guid: 9125b623e1dc2744496acbdd30e4355d
+    guid: 2d86307ceb9172a439179a580165884f
   m_configObjects: {}

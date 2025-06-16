@@ -1,5 +1,5 @@
 // BuildingBlock.cs
-using System.Collections; // Coroutineのために必要
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(Renderer))]
@@ -15,8 +15,15 @@ public class BuildingBlock : MonoBehaviour
     public Material softMaterial;
     public float hardnessThreshold = 1500f;
 
-    [Header("ゲーム設定")]
-    public float fallLimitY = -50f;
+    // --- ▼▼▼ フィールドを修正・追加 ▼▼▼ ---
+    [Header("破壊判定の境界")]
+    [Tooltip("このY座標より下に落ちたら破壊されたとみなす")]
+    public float fallLimitY = -10f; // Y座標のデフォルト値を-10に変更
+
+    [Tooltip("X座標とZ座標がこの値の絶対値を超えたら破壊されたとみなす")]
+    public float horizontalLimit = 300f; // 水平方向の限界値を追加
+
+    // --- ▲▲▲ 変更点 ▲▲▲ ---
 
     [Header("デバッグ")]
     public bool showGizmos = true;
@@ -24,12 +31,7 @@ public class BuildingBlock : MonoBehaviour
     private Renderer blockRenderer;
     private bool hasNotifiedDestruction = false;
     private bool hasNotifiedLanding = false;
-
-    // --- ▼▼▼ 新しい変数を追加 ▼▼▼ ---
-    // シーン開始直後の不要な着地判定を防ぐためのフラグ
     private bool canNotifyLanding = false;
-
-    // --- ▲▲▲ 変更点 ▲▲▲ ---
 
     void Awake()
     {
@@ -37,30 +39,24 @@ public class BuildingBlock : MonoBehaviour
         SetMaterialBasedOnHardness();
     }
 
-    // --- ▼▼▼ 新しいメソッドを追加 ▼▼▼ ---
     void Start()
     {
-        // 0.5秒後に着地判定を有効にするコルーチンを開始
         StartCoroutine(EnableLandingNotificationsAfterDelay(0.5f));
     }
 
-    /// <summary>
-    /// 指定した秒数後に着地通知フラグを有効にします。
-    /// </summary>
     private IEnumerator EnableLandingNotificationsAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
         canNotifyLanding = true;
     }
 
-    // --- ▲▲▲ 変更点 ▲▲▲ ---
-
     void Update()
     {
-        CheckFallLimit();
+        // --- ▼▼▼ メソッド呼び出しを修正 ▼▼▼ ---
+        CheckBoundaryLimits(); // メソッド名を変更
+        // --- ▲▲▲ 変更点 ▲▲▲ ---
     }
 
-    // --- ▼▼▼ このメソッドを修正 ▼▼▼ ---
     void OnCollisionEnter(Collision collision)
     {
         if (GameManager.Instance == null)
@@ -68,18 +64,14 @@ public class BuildingBlock : MonoBehaviour
 
         string contactTag = collision.gameObject.tag;
 
-        // 道路接触の失敗判定は、時間差なく即座に行う
         if (contactTag == "Road")
         {
             GameManager.Instance.NotifyRoadContact();
         }
 
-        // --- 着地判定のロジックを修正 ---
-        // 着地判定が有効になっていない場合、または既に着地済みの場合は処理を中断
         if (!canNotifyLanding || hasNotifiedLanding)
             return;
 
-        // 初めての着地時の処理
         if (contactTag == "Ground")
         {
             GameManager.Instance.NotifyBlockOnGround();
@@ -94,8 +86,6 @@ public class BuildingBlock : MonoBehaviour
         }
     }
 
-    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
-
     public void Annihilate()
     {
         NotifyDestructionIfNeeded();
@@ -105,14 +95,28 @@ public class BuildingBlock : MonoBehaviour
     private void SetMaterialBasedOnHardness() { /* 変更なし */
     }
 
-    private void CheckFallLimit()
+    // --- ▼▼▼ このメソッドを修正 ▼▼▼ ---
+    /// <summary>
+    /// ブロックが設定された境界の外に出たかどうかをチェックします。
+    /// </summary>
+    private void CheckBoundaryLimits() // メソッド名を CheckFallLimit から変更
     {
-        if (transform.position.y < fallLimitY)
+        // 現在の位置を取得
+        Vector3 currentPosition = transform.position;
+
+        // Y座標、X座標、Z座標のいずれかが限界値を超えたか判定
+        if (
+            currentPosition.y < fallLimitY
+            || Mathf.Abs(currentPosition.x) > horizontalLimit
+            || Mathf.Abs(currentPosition.z) > horizontalLimit
+        )
         {
             NotifyDestructionIfNeeded();
             gameObject.SetActive(false);
         }
     }
+
+    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
 
     private void NotifyDestructionIfNeeded()
     {
