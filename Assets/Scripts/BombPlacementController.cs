@@ -11,30 +11,22 @@ public class BombPlacementController : MonoBehaviour
     [Header("参照")]
     [SerializeField]
     private Transform cameraTransform;
-    private Transform playerTransform; // 変更なし
-
-    // --- ▼▼▼ ドラッグ設定は削除またはコメントアウトします ▼▼▼ ---
-    // [SerializeField] private float dragSensitivity = 0.1f;
-    // --- ▲▲▲ 変更点 ▲▲▲ ---
+    private Transform playerTransform;
 
     [Header("設置距離設定")]
     [SerializeField]
-    private float distanceAdjustSpeed = 10.0f; // スクロール感度を調整
+    private float distanceAdjustSpeed = 10.0f;
 
     [SerializeField]
     private float minDistance = 2.0f;
 
     [SerializeField]
-    private float maxDistance = 20.0f; // 最大距離を少し延長
+    private float maxDistance = 20.0f;
 
     private Bomb currentBombInstance;
     private bool isDraggingBomb = false;
     private readonly List<Bomb> placedBombs = new List<Bomb>();
-
-    // --- ▼▼▼ 新規変数 ▼▼▼ ---
-    private float currentDistance; // カメラからの距離を保持
-
-    // --- ▲▲▲ 変更点 ▲▲▲ ---
+    private float currentDistance;
 
     void Awake()
     {
@@ -68,50 +60,15 @@ public class BombPlacementController : MonoBehaviour
 
         if (isDraggingBomb && currentBombInstance != null)
         {
-            // --- ▼▼▼ ドラッグ処理の呼び出しを変更 ▼▼▼ ---
-            HandleBombPlacement(); // 新しい配置メソッドを呼ぶ
-            // HandleBombDistanceAdjustment(); // 新しいメソッドに統合
+            HandleBombPlacement();
             if (Input.GetMouseButtonUp(0))
             {
                 DropBomb();
             }
-            // --- ▲▲▲ 変更点 ▲▲▲ ---
         }
     }
 
-    public void SpawnNew()
-    {
-        if (isDraggingBomb)
-            DropBomb();
-
-        // --- ▼▼▼ 生成ロジックを変更 ▼▼▼ ---
-        currentDistance = minDistance; // 初期距離を設定
-        Vector3 spawnPosition =
-            cameraTransform.position + cameraTransform.forward * currentDistance;
-        currentBombInstance = Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
-
-        SetupBombForDragging(currentBombInstance);
-        // --- ▲▲▲ 変更点 ▲▲▲ ---
-    }
-
-    private void SetupBombForDragging(Bomb bomb)
-    {
-        // 親を設定しないように変更
-        // if (playerTransform != null) bomb.transform.SetParent(playerTransform);
-
-        if (bomb.TryGetComponent<Rigidbody>(out var rb))
-        {
-            rb.isKinematic = true; // 物理演算を無効化
-        }
-        if (bomb.TryGetComponent<Collider>(out var col))
-        {
-            col.isTrigger = true; // 他オブジェクトとの衝突を無効化
-        }
-
-        isDraggingBomb = true;
-    }
-
-    // --- ▼▼▼ ドラッグ処理を全面的に書き換え ▼▼▼ ---
+    // --- ▼▼▼ このメソッドを修正 ▼▼▼ ---
     /// <summary>
     /// レイキャストを使用して爆弾の配置場所を決定します。
     /// </summary>
@@ -126,10 +83,17 @@ public class BombPlacementController : MonoBehaviour
         Vector3 targetPosition;
 
         // レイを飛ばし、BuildingBlockまたはGround/Roadに当たったかチェック
-        if (Physics.Raycast(ray, out RaycastHit hit, maxDistance, LayerMask.GetMask("Default"))) // "Default"レイヤーなどを対象にする
+        if (Physics.Raycast(ray, out RaycastHit hit, maxDistance, LayerMask.GetMask("Default")))
         {
-            // ヒットした点の表面に配置（めり込み防止のため法線方向に少しオフセット）
-            targetPosition = hit.point + hit.normal * 0.1f;
+            // インスタンスのSphereColliderの半径を取得（スケールも考慮）
+            SphereCollider bombCollider = currentBombInstance.GetComponent<SphereCollider>();
+            float bombRadius =
+                bombCollider != null
+                    ? bombCollider.radius * currentBombInstance.transform.lossyScale.x
+                    : 0;
+
+            // ヒットした点の表面に、爆弾の半径分離して配置
+            targetPosition = hit.point + hit.normal * bombRadius;
         }
         else
         {
@@ -140,26 +104,38 @@ public class BombPlacementController : MonoBehaviour
         currentBombInstance.transform.position = targetPosition;
     }
 
-    // --- ▲▲▲ 変更点 ▲▲▲ ---
+    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
+
+    // --- 以下、既存のメソッド (変更なし) ---
+    public void SpawnNew()
+    {
+        if (isDraggingBomb)
+            DropBomb();
+        currentDistance = minDistance;
+        Vector3 spawnPosition =
+            cameraTransform.position + cameraTransform.forward * currentDistance;
+        currentBombInstance = Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
+        SetupBombForDragging(currentBombInstance);
+    }
+
+    private void SetupBombForDragging(Bomb bomb)
+    {
+        if (bomb.TryGetComponent<Rigidbody>(out var rb))
+            rb.isKinematic = true;
+        if (bomb.TryGetComponent<Collider>(out var col))
+            col.isTrigger = true;
+        isDraggingBomb = true;
+    }
 
     private void DropBomb()
     {
         if (currentBombInstance != null)
         {
             currentBombInstance.transform.SetParent(null);
-
-            // RigidbodyはKinematicのままにして、設置後に動かないようにする
             if (currentBombInstance.TryGetComponent<Rigidbody>(out var rb))
-            {
                 rb.isKinematic = true;
-            }
-
-            // ColliderのTriggerを解除し、物理的な存在にはするが、動かないようにする
             if (currentBombInstance.TryGetComponent<Collider>(out var col))
-            {
                 col.isTrigger = false;
-            }
-
             if (!placedBombs.Contains(currentBombInstance))
             {
                 placedBombs.Add(currentBombInstance);
@@ -170,7 +146,6 @@ public class BombPlacementController : MonoBehaviour
         }
     }
 
-    // --- 以下、既存のメソッド (変更なし) ---
     private void TrySelectAndDragBomb()
     {
         Ray ray = cameraTransform.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
