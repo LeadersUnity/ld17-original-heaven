@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Usage Limit 5
   m_EditorClassIdentifier: 
   description: Ability Limit
-  type: 0
+  type: 1
   usageLimit: 5
