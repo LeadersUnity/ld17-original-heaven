@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stageId: Stage_03
   sceneName: Stage3
-  stageName: Stage3
+  stageName: University
   scoreToUnlockNextLevel: 1000
   nextStage: {fileID: 11400000, guid: a9654697883cfd5438cec50cf26155eb, type: 2}
   tasks:

@@ -1,4 +1,5 @@
 // BuildingBlock.cs
+using System.Collections; // Coroutineのために必要
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(Renderer))]
@@ -24,11 +25,35 @@ public class BuildingBlock : MonoBehaviour
     private bool hasNotifiedDestruction = false;
     private bool hasNotifiedLanding = false;
 
+    // --- ▼▼▼ 新しい変数を追加 ▼▼▼ ---
+    // シーン開始直後の不要な着地判定を防ぐためのフラグ
+    private bool canNotifyLanding = false;
+
+    // --- ▲▲▲ 変更点 ▲▲▲ ---
+
     void Awake()
     {
         blockRenderer = GetComponent<Renderer>();
         SetMaterialBasedOnHardness();
     }
+
+    // --- ▼▼▼ 新しいメソッドを追加 ▼▼▼ ---
+    void Start()
+    {
+        // 0.5秒後に着地判定を有効にするコルーチンを開始
+        StartCoroutine(EnableLandingNotificationsAfterDelay(0.5f));
+    }
+
+    /// <summary>
+    /// 指定した秒数後に着地通知フラグを有効にします。
+    /// </summary>
+    private IEnumerator EnableLandingNotificationsAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        canNotifyLanding = true;
+    }
+
+    // --- ▲▲▲ 変更点 ▲▲▲ ---
 
     void Update()
     {
@@ -43,17 +68,18 @@ public class BuildingBlock : MonoBehaviour
 
         string contactTag = collision.gameObject.tag;
 
-        // 道路接触の失敗判定は、着地済みかどうかにかかわらず毎回行う
+        // 道路接触の失敗判定は、時間差なく即座に行う
         if (contactTag == "Road")
         {
             GameManager.Instance.NotifyRoadContact();
         }
 
-        // 一度でも着地通知をしていたら、以降の着地通知（スコア加算など）は行わない
-        if (hasNotifiedLanding)
+        // --- 着地判定のロジックを修正 ---
+        // 着地判定が有効になっていない場合、または既に着地済みの場合は処理を中断
+        if (!canNotifyLanding || hasNotifiedLanding)
             return;
 
-        // --- 初めての着地時の処理 ---
+        // 初めての着地時の処理
         if (contactTag == "Ground")
         {
             GameManager.Instance.NotifyBlockOnGround();
@@ -62,7 +88,6 @@ public class BuildingBlock : MonoBehaviour
         }
         else if (contactTag == "Road")
         {
-            // （初めての着地が道路だった場合）
             GameManager.Instance.NotifyBlockOnRoad();
             hasNotifiedLanding = true;
             NotifyDestructionIfNeeded();
@@ -71,14 +96,9 @@ public class BuildingBlock : MonoBehaviour
 
     // --- ▲▲▲ 修正ここまで ▲▲▲ ---
 
-    /// <summary>
-    /// Annihilatorによって呼び出され、このブロックを消滅させます。
-    /// </summary>
     public void Annihilate()
     {
-        // 破壊通知をまだ送っていなければ送る
         NotifyDestructionIfNeeded();
-        // オブジェクトを即座に破壊
         Destroy(gameObject);
     }
 
