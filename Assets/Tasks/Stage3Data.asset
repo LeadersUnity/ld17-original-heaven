@@ -18,7 +18,8 @@ MonoBehaviour:
   scoreToUnlockNextLevel: 1000
   nextStage: {fileID: 11400000, guid: a9654697883cfd5438cec50cf26155eb, type: 2}
   tasks:
-  - {fileID: 11400000, guid: 79fef43f48233b84da6bfe0f657beb6f, type: 2}
+  - {fileID: 11400000, guid: 7969b1e1956231b45ad7bf3a19552915, type: 2}
+  - {fileID: 11400000, guid: 915784c11161cc8428498a80189e04da, type: 2}
   scoreCoefficients:
     blockOnGround: 100
     blockOnRoad: -50

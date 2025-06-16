@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea5eeda6b2113ae42911e6927d88e31b, type: 3}
   m_Name: DoNotTouchTheRoads
   m_EditorClassIdentifier: 
-  description: Don't touch the roads
+  description: Don't hit the town with debris.
   type: 0
   usageLimit: 20

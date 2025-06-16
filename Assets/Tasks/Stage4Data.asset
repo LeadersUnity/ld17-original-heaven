@@ -14,11 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stageId: Stage_04
   sceneName: Stage4
-  stageName: Stage4
+  stageName: Town2
   scoreToUnlockNextLevel: 1000
   nextStage: {fileID: 11400000, guid: ac87cafb90e274e41af9b1b8e374d106, type: 2}
   tasks:
   - {fileID: 11400000, guid: 79fef43f48233b84da6bfe0f657beb6f, type: 2}
+  - {fileID: 11400000, guid: 52d4a7ba45d805343b893c100bc326c9, type: 2}
   scoreCoefficients:
     blockOnGround: 100
     blockOnRoad: -50
