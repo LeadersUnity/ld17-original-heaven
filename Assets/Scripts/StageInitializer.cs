@@ -1,5 +1,4 @@
-// --- StageInitializer.cs ---
-// GameManagerにどのステージの設定を読み込ませるかを指定します。
+// StageInitializer.cs
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,6 +18,14 @@ public class StageInitializer : MonoBehaviour
 
     [Tooltip("このステージのハイスコア表示用UI Text")]
     public Text highScoreTextForThisScene;
+
+    // --- ▼▼▼ 新しい変数を追加 ▼▼▼ ---
+    [Header("ステージ開始時アニメーション")]
+    [Tooltip("ステージ名を表示・フェードアウトさせるコントローラー")]
+    [SerializeField]
+    private StageNameDisplayController stageNameDisplayController;
+
+    // --- ▲▲▲ 変更点 ▲▲▲ ---
 
     void Start()
     {
@@ -42,5 +49,17 @@ public class StageInitializer : MonoBehaviour
         {
             Debug.LogError("GameManagerが見つかりません。", gameObject);
         }
+
+        // --- ▼▼▼ 新しい処理を追加 ▼▼▼ ---
+        // ステージ名表示の処理を呼び出す
+        if (stageNameDisplayController != null)
+        {
+            stageNameDisplayController.ShowStageName(stageData.stageName);
+        }
+        else
+        {
+            Debug.LogWarning("StageNameDisplayControllerが設定されていません。", gameObject);
+        }
+        // --- ▲▲▲ 変更点 ▲▲▲ ---
     }
 }
