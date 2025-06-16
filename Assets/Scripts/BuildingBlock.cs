@@ -1,3 +1,4 @@
+// BuildingBlock.cs
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody), typeof(Renderer))]
@@ -34,11 +35,25 @@ public class BuildingBlock : MonoBehaviour
         CheckFallLimit();
     }
 
+    // --- ▼▼▼ このメソッドを修正 ▼▼▼ ---
     void OnCollisionEnter(Collision collision)
     {
-        if (GameManager.Instance == null || hasNotifiedLanding)
+        if (GameManager.Instance == null)
             return;
+
         string contactTag = collision.gameObject.tag;
+
+        // 道路接触の失敗判定は、着地済みかどうかにかかわらず毎回行う
+        if (contactTag == "Road")
+        {
+            GameManager.Instance.NotifyRoadContact();
+        }
+
+        // 一度でも着地通知をしていたら、以降の着地通知（スコア加算など）は行わない
+        if (hasNotifiedLanding)
+            return;
+
+        // --- 初めての着地時の処理 ---
         if (contactTag == "Ground")
         {
             GameManager.Instance.NotifyBlockOnGround();
@@ -47,12 +62,14 @@ public class BuildingBlock : MonoBehaviour
         }
         else if (contactTag == "Road")
         {
+            // （初めての着地が道路だった場合）
             GameManager.Instance.NotifyBlockOnRoad();
-            GameManager.Instance.NotifyRoadContact();
             hasNotifiedLanding = true;
             NotifyDestructionIfNeeded();
         }
     }
+
+    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
 
     /// <summary>
     /// Annihilatorによって呼び出され、このブロックを消滅させます。

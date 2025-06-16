@@ -638,21 +638,21 @@ MonoBehaviour:
   _startTimeOfDay: 0
   _sunColor:
     serializedVersion: 2
-    key0: {r: 0.9019608, g: 0.84887344, b: 0.64705884, a: 1}
+    key0: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 1}
     key1: {r: 1, g: 1, b: 1, a: 1}
-    key2: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 1}
-    key3: {r: 0.043137256, g: 0.047058824, b: 0.105882354, a: 1}
-    key4: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
+    key2: {r: 1, g: 1, b: 1, a: 1}
+    key3: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 1}
+    key4: {r: 0.27058825, g: 0.2901961, b: 0.41568628, a: 0}
+    key5: {r: 0.27058825, g: 0.2901961, b: 0.41568628, a: 0}
+    key6: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 0}
     key7: {r: 0, g: 0, b: 0, a: 0}
     ctime0: 0
-    ctime1: 19950
-    ctime2: 42694
-    ctime3: 53103
-    ctime4: 65535
-    ctime5: 0
-    ctime6: 0
+    ctime1: 13011
+    ctime2: 18600
+    ctime3: 28142
+    ctime4: 42694
+    ctime5: 53103
+    ctime6: 65535
     ctime7: 0
     atime0: 17540
     atime1: 28334
@@ -664,25 +664,25 @@ MonoBehaviour:
     atime7: 0
     m_Mode: 0
     m_ColorSpace: -1
-    m_NumColorKeys: 5
+    m_NumColorKeys: 7
     m_NumAlphaKeys: 4
   _skyColor:
     serializedVersion: 2
-    key0: {r: 0.9019608, g: 0.84887344, b: 0.64705884, a: 1}
-    key1: {r: 1, g: 1, b: 1, a: 1}
-    key2: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 1}
-    key3: {r: 0.043137256, g: 0.047058824, b: 0.105882354, a: 1}
-    key4: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
+    key0: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 1}
+    key1: {r: 0.8392157, g: 1, b: 0.9882353, a: 1}
+    key2: {r: 0.8396226, g: 1, b: 0.9882425, a: 1}
+    key3: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 1}
+    key4: {r: 0.27058825, g: 0.2901961, b: 0.41568628, a: 0}
+    key5: {r: 0.27058825, g: 0.2901961, b: 0.41568628, a: 0}
+    key6: {r: 0.9019608, g: 0.84705883, b: 0.64705884, a: 0}
     key7: {r: 0, g: 0, b: 0, a: 0}
     ctime0: 0
-    ctime1: 19950
-    ctime2: 42694
-    ctime3: 53103
-    ctime4: 65535
-    ctime5: 0
-    ctime6: 0
+    ctime1: 13011
+    ctime2: 18600
+    ctime3: 28142
+    ctime4: 42694
+    ctime5: 53103
+    ctime6: 65535
     ctime7: 0
     atime0: 17540
     atime1: 28334
@@ -694,7 +694,7 @@ MonoBehaviour:
     atime7: 0
     m_Mode: 0
     m_ColorSpace: -1
-    m_NumColorKeys: 5
+    m_NumColorKeys: 7
     m_NumAlphaKeys: 4
   _sunIntensityCurve:
     serializedVersion: 2
