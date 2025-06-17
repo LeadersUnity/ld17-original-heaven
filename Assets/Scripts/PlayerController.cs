@@ -1,3 +1,4 @@
+// PlayerController.cs
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -21,11 +22,18 @@ public class PlayerController : MonoBehaviour
     private float rotationX = 0;
     private float rotationY = 0;
 
+    // --- ▼▼▼ 外部から操作を制御するためのフラグを追加 ▼▼▼ ---
+    [HideInInspector]
+    public bool canMove = false; // 移動（WASD, Space, Shift）の許可フラグ
+
+    [HideInInspector]
+    public bool canLook = false; // 視点操作（矢印キー）の許可フラグ
+
+    // --- ▲▲▲ 追加ここまで ▲▲▲ ---
+
     void Awake()
     {
         characterController = GetComponent<CharacterController>();
-
-        // 初期回転角度を設定
         Vector3 initialRotation = transform.eulerAngles;
         rotationX = initialRotation.x;
         rotationY = initialRotation.y;
@@ -33,8 +41,16 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        HandleMovement();
-        HandleCameraLook();
+        // --- ▼▼▼ フラグによる制御を追加 ▼▼▼ ---
+        if (canMove)
+        {
+            HandleMovement();
+        }
+        if (canLook)
+        {
+            HandleCameraLook();
+        }
+        // --- ▲▲▲ 変更点 ▲▲▲ ---
     }
 
     private void HandleMovement()
@@ -48,7 +64,6 @@ public class PlayerController : MonoBehaviour
         Vector3 moveDirection =
             (forward * verticalInput + right * horizontalInput).normalized * moveSpeed;
 
-        // 上下移動
         if (Input.GetKey(KeyCode.Space))
         {
             moveDirection.y = moveSpeed;
@@ -63,7 +78,6 @@ public class PlayerController : MonoBehaviour
 
     private void HandleCameraLook()
     {
-        // 矢印キーによる視点操作
         float horizontalLook =
             Input.GetKey(KeyCode.RightArrow) ? 1f
             : Input.GetKey(KeyCode.LeftArrow) ? -1f
@@ -76,12 +90,9 @@ public class PlayerController : MonoBehaviour
         rotationY += horizontalLook * lookSensitivity * Time.deltaTime;
         rotationX += verticalLook * lookSensitivity * Time.deltaTime;
 
-        // 上下方向の回転に角度制限をかける
         rotationX = Mathf.Clamp(rotationX, verticalLookRange.x, verticalLookRange.y);
 
-        // プレイヤー本体を左右に回転
         transform.localRotation = Quaternion.Euler(0, rotationY, 0);
-        // カメラを上下に回転（カメラはプレイヤーの子オブジェクトであることを想定）
         Camera.main.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
     }
 }

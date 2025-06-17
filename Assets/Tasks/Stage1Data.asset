@@ -14,14 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stageId: Stage_01
   sceneName: Stage1
-  stageName: A Building
+  stageName: Tutorial
   scoreToUnlockNextLevel: 1000
   nextStage: {fileID: 11400000, guid: d3f4a25857ee9514aab31ce7dd21f5da, type: 2}
+  allowBombs: 1
+  allowForce: 1
+  allowAnnihilator: 1
   tasks:
-  - {fileID: 11400000, guid: 7969b1e1956231b45ad7bf3a19552915, type: 2}
+  - {fileID: 11400000, guid: 17fe400a377053547bcf433a788a2d76, type: 2}
   scoreCoefficients:
+    initialScore: 20000
     blockOnGround: 100
     blockOnRoad: -50
-    jointDestructionBonus: 100
-    itemUsedPenalty: -1000
-    timePenalty: -10
+    jointDestructionBonus: 200
+    itemUsedPenalty: -500
+    timePenalty: -5
