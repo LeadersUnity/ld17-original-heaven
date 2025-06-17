@@ -2015,7 +2015,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: ooo
+  m_Text: "\u6B21\u306E\u30B9\u30C6\u30FC\u30B8\u89E3\u653E\u30B9\u30B3\u30A2:\u70B9%\u56DE\u79D2()\u9054\u5931\u6557\u7D99\u7D9A\u4E2D0123456789"
 --- !u!222 &584628742
 CanvasRenderer:
   m_ObjectHideFlags: 0
