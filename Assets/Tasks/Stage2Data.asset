@@ -17,6 +17,9 @@ MonoBehaviour:
   stageName: Town
   scoreToUnlockNextLevel: 10000
   nextStage: {fileID: 11400000, guid: a3c8b15bf570a0844b230086a18fa0c2, type: 2}
+  allowBombs: 1
+  allowForce: 1
+  allowAnnihilator: 0
   tasks:
   - {fileID: 11400000, guid: 79fef43f48233b84da6bfe0f657beb6f, type: 2}
   - {fileID: 11400000, guid: 915784c11161cc8428498a80189e04da, type: 2}

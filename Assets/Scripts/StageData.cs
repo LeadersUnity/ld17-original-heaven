@@ -1,4 +1,3 @@
-// StageData.cs
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,10 +9,9 @@ public class StageData : ScriptableObject
     public string stageId = "Stage_01";
 
     [Tooltip("このステージのシーン名")]
-    public string sceneName = "SampleScene"; // シーン名を直接指定
+    public string sceneName = "SampleScene";
     public string stageName = "ステージ";
 
-    // --- ▼▼▼ 変更点 ▼▼▼ ---
     [Header("ステージアンロック条件")]
     [Tooltip("このステージをクリアした際、次のステージをアンロックするために必要なスコア")]
     public int scoreToUnlockNextLevel = 10000;
@@ -21,12 +19,20 @@ public class StageData : ScriptableObject
     [Tooltip("このステージクリアでアンロックされる次のステージのStageData")]
     public StageData nextStage;
 
-    // --- ▲▲▲ 変更点 ▲▲▲ ---
+    [Header("アビリティ使用許可")]
+    [Tooltip("このステージでBombの使用を許可するか")]
+    public bool allowBombs = true;
+
+    [Tooltip("このステージでForceの使用を許可するか")]
+    public bool allowForce = true;
+
+    [Tooltip("このステージでAnnihilatorの使用を許可するか")]
+    public bool allowAnnihilator = true;
 
     [Header("クリア条件タスク")]
     [Tooltip("このステージのクリア条件となるタスクのリスト")]
-    public List<TaskBase> tasks = new List<TaskBase>(); //
+    public List<TaskBase> tasks = new List<TaskBase>();
 
     [Header("スコア計算係数")]
-    public ScoreCoefficients scoreCoefficients; //
+    public ScoreCoefficients scoreCoefficients;
 }

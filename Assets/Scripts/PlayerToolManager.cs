@@ -48,7 +48,6 @@ public class PlayerToolManager : MonoBehaviour
 
     void Awake()
     {
-        // シングルトンパターンの設定
         if (Instance == null)
         {
             Instance = this;
@@ -70,12 +69,33 @@ public class PlayerToolManager : MonoBehaviour
 
     void Start()
     {
+        // GameManagerからStageDataを取得し、それに基づいてボタンの有効/無効を設定
+        if (GameManager.Instance != null && GameManager.Instance.GetCurrentStageData() != null)
+        {
+            SetupAbilityButtons(GameManager.Instance.GetCurrentStageData());
+        }
+
         bombModeButton?.onClick.AddListener(() => OnModeButtonPressed(ToolMode.Bomb));
         forceModeButton?.onClick.AddListener(() => OnModeButtonPressed(ToolMode.Force));
         annihilatorModeButton?.onClick.AddListener(() => OnModeButtonPressed(ToolMode.Annihilator));
         activateAllButton?.onClick.AddListener(ActivateCurrentTool);
 
-        SwitchMode(currentMode);
+        // 初期モードを設定
+        // ただし、最初のモードが許可されていない場合、許可されている最初のモードに切り替える
+        if (!IsModeAllowed(currentMode))
+        {
+            // 代替モードを探す
+            if (bombModeButton.gameObject.activeSelf)
+                SwitchMode(ToolMode.Bomb);
+            else if (forceModeButton.gameObject.activeSelf)
+                SwitchMode(ToolMode.Force);
+            else if (annihilatorModeButton.gameObject.activeSelf)
+                SwitchMode(ToolMode.Annihilator);
+        }
+        else
+        {
+            SwitchMode(currentMode);
+        }
     }
 
     void OnDestroy()
@@ -90,6 +110,34 @@ public class PlayerToolManager : MonoBehaviour
     public ToolMode GetCurrentMode()
     {
         return currentMode;
+    }
+
+    /// <summary>
+    /// StageDataの設定に基づいて、各アビリティボタンの表示/非表示を切り替えます。
+    /// </summary>
+    private void SetupAbilityButtons(StageData stageData)
+    {
+        bombModeButton?.gameObject.SetActive(stageData.allowBombs);
+        forceModeButton?.gameObject.SetActive(stageData.allowForce);
+        annihilatorModeButton?.gameObject.SetActive(stageData.allowAnnihilator);
+    }
+
+    /// <summary>
+    /// 指定されたモードが現在許可されているか確認します。
+    /// </summary>
+    private bool IsModeAllowed(ToolMode mode)
+    {
+        switch (mode)
+        {
+            case ToolMode.Bomb:
+                return bombModeButton.gameObject.activeSelf;
+            case ToolMode.Force:
+                return forceModeButton.gameObject.activeSelf;
+            case ToolMode.Annihilator:
+                return annihilatorModeButton.gameObject.activeSelf;
+            default:
+                return false;
+        }
     }
 
     private void OnModeButtonPressed(ToolMode requestedMode)

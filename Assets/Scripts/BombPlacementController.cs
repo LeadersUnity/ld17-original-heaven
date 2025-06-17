@@ -18,7 +18,7 @@ public class BombPlacementController : MonoBehaviour
     private float distanceAdjustSpeed = 10.0f;
 
     [SerializeField]
-    private float minDistance = 2.0f;
+    private float minDistance = 2.0f; // デフォルト値を2に設定
 
     [SerializeField]
     private float maxDistance = 20.0f;
@@ -70,11 +70,53 @@ public class BombPlacementController : MonoBehaviour
 
     // --- ▼▼▼ このメソッドを修正 ▼▼▼ ---
     /// <summary>
-    /// レイキャストを使用して爆弾の配置場所を決定します。
+    /// 新しい爆弾を画面中央に生成・設置します。
     /// </summary>
+    public void SpawnNew()
+    {
+        // 既に何かをドラッグしている場合は、新しい爆弾を生成しない
+        if (isDraggingBomb)
+            return;
+
+        // 画面中央（カメラの前方）に位置を決定
+        Vector3 spawnPosition = cameraTransform.position + cameraTransform.forward * minDistance;
+        Bomb newBomb = Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
+
+        // 生成された爆弾の初期状態を設定（物理的に静止させる）
+        if (newBomb.TryGetComponent<Rigidbody>(out var rb))
+        {
+            rb.isKinematic = true;
+        }
+        if (newBomb.TryGetComponent<Collider>(out var col))
+        {
+            col.isTrigger = false;
+        }
+
+        // 設置済み爆弾としてリストに追加
+        if (!placedBombs.Contains(newBomb))
+        {
+            placedBombs.Add(newBomb);
+            newBomb.OnBombDestroyed += RemoveBombFromList;
+        }
+    }
+
+    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
+
+    private void SetupBombForDragging(Bomb bomb)
+    {
+        if (bomb.TryGetComponent<Rigidbody>(out var rb))
+        {
+            rb.isKinematic = true;
+        }
+        if (bomb.TryGetComponent<Collider>(out var col))
+        {
+            col.isTrigger = true;
+        }
+        isDraggingBomb = true;
+    }
+
     private void HandleBombPlacement()
     {
-        // マウススクロールでカメラからの距離を調整
         float scrollInput = Input.GetAxis("Mouse ScrollWheel");
         currentDistance -= scrollInput * distanceAdjustSpeed;
         currentDistance = Mathf.Clamp(currentDistance, minDistance, maxDistance);
@@ -82,49 +124,20 @@ public class BombPlacementController : MonoBehaviour
         Ray ray = cameraTransform.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
         Vector3 targetPosition;
 
-        // レイを飛ばし、BuildingBlockまたはGround/Roadに当たったかチェック
         if (Physics.Raycast(ray, out RaycastHit hit, maxDistance, LayerMask.GetMask("Default")))
         {
-            // インスタンスのSphereColliderの半径を取得（スケールも考慮）
             SphereCollider bombCollider = currentBombInstance.GetComponent<SphereCollider>();
             float bombRadius =
                 bombCollider != null
                     ? bombCollider.radius * currentBombInstance.transform.lossyScale.x
                     : 0;
-
-            // ヒットした点の表面に、爆弾の半径分離して配置
             targetPosition = hit.point + hit.normal * bombRadius;
         }
         else
         {
-            // 何もヒットしなかった場合、カメラの前方、調整された距離に配置
             targetPosition = ray.GetPoint(currentDistance);
         }
-
         currentBombInstance.transform.position = targetPosition;
-    }
-
-    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
-
-    // --- 以下、既存のメソッド (変更なし) ---
-    public void SpawnNew()
-    {
-        if (isDraggingBomb)
-            DropBomb();
-        currentDistance = minDistance;
-        Vector3 spawnPosition =
-            cameraTransform.position + cameraTransform.forward * currentDistance;
-        currentBombInstance = Instantiate(bombPrefab, spawnPosition, Quaternion.identity);
-        SetupBombForDragging(currentBombInstance);
-    }
-
-    private void SetupBombForDragging(Bomb bomb)
-    {
-        if (bomb.TryGetComponent<Rigidbody>(out var rb))
-            rb.isKinematic = true;
-        if (bomb.TryGetComponent<Collider>(out var col))
-            col.isTrigger = true;
-        isDraggingBomb = true;
     }
 
     private void DropBomb()

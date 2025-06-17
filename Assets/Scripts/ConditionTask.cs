@@ -46,7 +46,7 @@ public class ConditionTask : TaskBase
             case ConditionType.AvoidRoadContact:
                 return "継続中";
             case ConditionType.LimitedUsage:
-                return $"{gm.TotalItemsUsed}/{usageLimit} 回";
+                return $"{gm.TotalItemsUsed}/{usageLimit} ";
             default:
                 return "";
         }

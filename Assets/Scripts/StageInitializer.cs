@@ -39,7 +39,6 @@ public class StageInitializer : MonoBehaviour
         {
             // GameManagerにUI参照を渡す
             GameManager.Instance.scoreText = scoreTextForThisScene;
-            GameManager.Instance.taskDisplayText = taskDisplayTextForThisScene;
             GameManager.Instance.highScoreText = highScoreTextForThisScene;
 
             // ゲームの初期化

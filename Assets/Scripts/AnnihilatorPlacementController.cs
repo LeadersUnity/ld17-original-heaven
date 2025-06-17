@@ -18,7 +18,7 @@ public class AnnihilatorPlacementController : MonoBehaviour
     private float distanceAdjustSpeed = 10.0f;
 
     [SerializeField]
-    private float minDistance = 2.0f;
+    private float minDistance = 2.0f; // デフォルト値を2に設定
 
     [SerializeField]
     private float maxDistance = 20.0f;
@@ -69,6 +69,52 @@ public class AnnihilatorPlacementController : MonoBehaviour
     }
 
     // --- ▼▼▼ このメソッドを修正 ▼▼▼ ---
+    /// <summary>
+    /// 新しいAnnihilatorを画面中央に生成・設置します。
+    /// </summary>
+    public void SpawnNew()
+    {
+        // 既に何かをドラッグしている場合は、新しいものを生成しない
+        if (isDragging)
+            return;
+
+        // 画面中央（カメラの前方）に位置を決定
+        Vector3 spawnPosition = cameraTransform.position + cameraTransform.forward * minDistance;
+        Annihilator newInstance = Instantiate(
+            annihilatorPrefab,
+            spawnPosition,
+            Quaternion.identity
+        );
+
+        // 生成されたインスタンスの初期状態を設定（物理的に静止させる）
+        if (newInstance.TryGetComponent<Rigidbody>(out var rb))
+        {
+            rb.isKinematic = true;
+        }
+        if (newInstance.TryGetComponent<Collider>(out var col))
+        {
+            col.isTrigger = false;
+        }
+
+        // 設置済みとしてリストに追加
+        if (!placedAnnihilators.Contains(newInstance))
+        {
+            placedAnnihilators.Add(newInstance);
+            newInstance.OnAnnihilatorDestroyed += RemoveFromList;
+        }
+    }
+
+    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
+
+    private void SetupForDragging(Annihilator instance)
+    {
+        if (instance.TryGetComponent<Rigidbody>(out var rb))
+            rb.isKinematic = true;
+        if (instance.TryGetComponent<Collider>(out var col))
+            col.isTrigger = true;
+        isDragging = true;
+    }
+
     private void HandlePlacement()
     {
         float scrollInput = Input.GetAxis("Mouse ScrollWheel");
@@ -80,14 +126,11 @@ public class AnnihilatorPlacementController : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxDistance, LayerMask.GetMask("Default")))
         {
-            // インスタンスのSphereColliderの半径を取得（スケールも考慮）
             SphereCollider annihilatorCollider = currentInstance.GetComponent<SphereCollider>();
             float annihilatorRadius =
                 annihilatorCollider != null
                     ? annihilatorCollider.radius * currentInstance.transform.lossyScale.x
                     : 0;
-
-            // ヒットした点の表面に、半径分離して配置
             targetPosition = hit.point + hit.normal * annihilatorRadius;
         }
         else
@@ -95,29 +138,6 @@ public class AnnihilatorPlacementController : MonoBehaviour
             targetPosition = ray.GetPoint(currentDistance);
         }
         currentInstance.transform.position = targetPosition;
-    }
-
-    // --- ▲▲▲ 修正ここまで ▲▲▲ ---
-
-    // --- 以下、既存のメソッド (変更なし) ---
-    public void SpawnNew()
-    {
-        if (isDragging)
-            Drop();
-        currentDistance = minDistance;
-        Vector3 spawnPosition =
-            cameraTransform.position + cameraTransform.forward * currentDistance;
-        currentInstance = Instantiate(annihilatorPrefab, spawnPosition, Quaternion.identity);
-        SetupForDragging(currentInstance);
-    }
-
-    private void SetupForDragging(Annihilator instance)
-    {
-        if (instance.TryGetComponent<Rigidbody>(out var rb))
-            rb.isKinematic = true;
-        if (instance.TryGetComponent<Collider>(out var col))
-            col.isTrigger = true;
-        isDragging = true;
     }
 
     private void Drop()

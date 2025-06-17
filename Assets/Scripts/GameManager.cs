@@ -11,7 +11,6 @@ public class GameManager : MonoBehaviour
 
     [Header("UI References")]
     public Text scoreText;
-    public Text taskDisplayText;
     public Text highScoreText;
 
     private StageData currentStageData;
@@ -83,77 +82,50 @@ public class GameManager : MonoBehaviour
         ElapsedTime += Time.deltaTime;
         currentScore = CalculateCurrentScore();
         UpdateScoreUI(currentScore);
-        UpdateTaskDisplayUI();
         CheckGameEndConditions();
     }
 
+    public StageData GetCurrentStageData() => currentStageData;
+
+    // ... (中略) ...
+
     // --- ▼▼▼ このメソッドを修正 ▼▼▼ ---
-    private void UpdateTaskDisplayUI()
+    private int CalculateCurrentScore()
     {
-        if (taskDisplayText == null || currentStageData == null)
-            return;
+        if (currentStageData == null)
+            return 0;
 
-        StringBuilder sb = new StringBuilder();
+        var coef = currentStageData.scoreCoefficients;
 
-        // 次のステージが存在し、かつ、まだアンロックされていない場合にのみ条件を表示する
-        if (
-            currentStageData.nextStage != null
-            && !LevelManager.IsLevelUnlocked(currentStageData.nextStage.stageId)
-        )
-        {
-            // 表示する文字の色を青色に変更
-            sb.AppendLine(
-                $"<color=blue>次のステージ解放スコア: {currentStageData.scoreToUnlockNextLevel}点</color>"
-            );
-            sb.AppendLine(); // タスクとの間に一行空白を入れる
-        }
+        // まず初期スコアをベースにする
+        int score = coef.initialScore;
 
-        // 既存のタスク表示ロジック
-        foreach (var task in currentStageData.tasks)
-        {
-            sb.AppendLine(task.GetDisplayText(this));
-        }
-        taskDisplayText.text = sb.ToString();
+        // 各項目を加算・減算していく
+        score += BlocksOnGroundCount * coef.blockOnGround;
+        score += BlocksOnRoadCount * coef.blockOnRoad;
+        float jointDestructionRatio =
+            (InitialJointCount > 0) ? (float)DestroyedJointCount / InitialJointCount : 0;
+        score += Mathf.FloorToInt(jointDestructionRatio * 100 * coef.jointDestructionBonus);
+        score += TotalItemsUsed * coef.itemUsedPenalty;
+        score += Mathf.FloorToInt(ElapsedTime * coef.timePenalty);
+
+        // 最終的なスコアを返す（マイナスになる可能性は残るが、なりにくくなった）
+        return score;
     }
 
     // --- ▲▲▲ 修正ここまで ▲▲▲ ---
 
-    // --- 以下、既存のメソッド (変更なし) ---
-    private void TriggerGameClear()
+    // ... (以下、変更なし) ...
+    public float GetDestroyedBlockPercentage()
     {
-        if (gameHasEnded)
-            return;
-        gameHasEnded = true;
-        Time.timeScale = 0f;
-        SaveHighScoreIfBetter(currentScore);
-        CheckAndUnlockNextLevel();
-        Debug.Log($"ゲームクリア！ スコア: {currentScore}");
-        FadeManager.Instance.LoadScene("GameClearScene", 0.5f);
-    }
-
-    private void CheckAndUnlockNextLevel()
-    {
-        if (currentStageData == null || currentStageData.nextStage == null)
-            return;
-        if (currentScore >= currentStageData.scoreToUnlockNextLevel)
-        {
-            LevelManager.UnlockLevel(currentStageData.nextStage.stageId);
-        }
-    }
-
-    private void TriggerGameOver(string reason)
-    {
-        if (gameHasEnded)
-            return;
-        gameHasEnded = true;
-        Time.timeScale = 0f;
-        Debug.Log($"ゲームオーバー... 理由: {reason} スコア: {currentScore}");
-        FadeManager.Instance.LoadScene("GameOverScene", 0.5f);
+        if (InitialBlockCount == 0)
+            return 100f;
+        return ((float)DestroyedBlockCount / InitialBlockCount) * 100f;
     }
 
     public void SaveHighScoreIfBetter(int newScore)
     {
-        string key = HIGHSCORE_KEY_PREFIX + lastPlayedStageId;
+        string key = HIGHSCORE_KEY_PREFIX + currentStageData.stageId;
         if (newScore > PlayerPrefs.GetInt(key, 0))
         {
             PlayerPrefs.SetInt(key, newScore);
@@ -247,26 +219,35 @@ public class GameManager : MonoBehaviour
             TriggerGameClear();
     }
 
-    private int CalculateCurrentScore()
+    private void TriggerGameClear()
     {
-        if (currentStageData == null)
-            return 0;
-        var coef = currentStageData.scoreCoefficients;
-        int score = 0;
-        score += BlocksOnGroundCount * coef.blockOnGround;
-        score += BlocksOnRoadCount * coef.blockOnRoad;
-        float jointDestructionRatio =
-            (InitialJointCount > 0) ? (float)DestroyedJointCount / InitialJointCount : 0;
-        score += Mathf.FloorToInt(jointDestructionRatio * 100 * coef.jointDestructionBonus);
-        score += TotalItemsUsed * coef.itemUsedPenalty;
-        score += Mathf.FloorToInt(ElapsedTime * coef.timePenalty);
-        return score;
+        if (gameHasEnded)
+            return;
+        gameHasEnded = true;
+        Time.timeScale = 0f;
+        SaveHighScoreIfBetter(currentScore);
+        CheckAndUnlockNextLevel();
+        Debug.Log($"ゲームクリア！ スコア: {currentScore}");
+        FadeManager.Instance.LoadScene("GameClearScene", 0.5f);
     }
 
-    public float GetDestroyedBlockPercentage()
+    private void CheckAndUnlockNextLevel()
     {
-        if (InitialBlockCount == 0)
-            return 100f;
-        return ((float)DestroyedBlockCount / InitialBlockCount) * 100f;
+        if (currentStageData == null || currentStageData.nextStage == null)
+            return;
+        if (currentScore >= currentStageData.scoreToUnlockNextLevel)
+        {
+            LevelManager.UnlockLevel(currentStageData.nextStage.stageId);
+        }
+    }
+
+    private void TriggerGameOver(string reason)
+    {
+        if (gameHasEnded)
+            return;
+        gameHasEnded = true;
+        Time.timeScale = 0f;
+        Debug.Log($"ゲームオーバー... 理由: {reason} スコア: {currentScore}");
+        FadeManager.Instance.LoadScene("GameOverScene", 0.5f);
     }
 }
