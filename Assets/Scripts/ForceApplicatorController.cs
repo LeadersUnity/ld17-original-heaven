@@ -5,7 +5,7 @@ public class ForceApplicatorController : MonoBehaviour
 {
     [Header("フォース設定")]
     [SerializeField]
-    private float forceMagnitude = 500f;
+    private float forceMagnitude = 1000f;
 
     [Header("エフェクト設定")]
     [SerializeField]

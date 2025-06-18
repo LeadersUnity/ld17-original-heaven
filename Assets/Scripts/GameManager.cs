@@ -223,6 +223,11 @@ public class GameManager : MonoBehaviour
     {
         if (gameHasEnded)
             return;
+
+        // --- ▼▼▼ この一行を追加 ▼▼▼ ---
+        Debug.LogWarning("★GAME CLEARがトリガーされました！");
+        // --- ▲▲▲ 追加ここまで ▲▲▲ ---
+
         gameHasEnded = true;
         Time.timeScale = 0f;
         SaveHighScoreIfBetter(currentScore);
@@ -245,6 +250,11 @@ public class GameManager : MonoBehaviour
     {
         if (gameHasEnded)
             return;
+
+        // --- ▼▼▼ この一行を追加 ▼▼▼ ---
+        Debug.LogWarning($"★GAME OVERがトリガーされました！ 理由: {reason}");
+        // --- ▲▲▲ 追加ここまで ▲▲▲ ---
+
         gameHasEnded = true;
         Time.timeScale = 0f;
         Debug.Log($"ゲームオーバー... 理由: {reason} スコア: {currentScore}");

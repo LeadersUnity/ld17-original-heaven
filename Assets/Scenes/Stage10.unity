@@ -595,8 +595,6 @@ GameObject:
   - component: {fileID: 654506082}
   - component: {fileID: 654506081}
   - component: {fileID: 654506080}
-  - component: {fileID: 654506079}
-  - component: {fileID: 654506078}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -604,38 +602,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &654506078
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 654506077}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11873abe4dfba2742a95dcfef5cbd3ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  forceMagnitude: 500
-  forceEffectPrefab: {fileID: 6280281539998945384, guid: f78aaaec3b393e24ca74cd6de8194347, type: 3}
-  forceSound: {fileID: 8300000, guid: 47c41b9182baf7440abdb31018a590f5, type: 3}
---- !u!114 &654506079
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 654506077}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 05dd1118bda7bab4eadca280ed1fbeea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  bombPrefab: {fileID: 8646833127425538050, guid: d55b8ecca6cdba64bb25afc5eaea778a, type: 3}
-  cameraTransform: {fileID: 1387181303}
-  distanceAdjustSpeed: 10
-  minDistance: 2
-  maxDistance: 15
 --- !u!54 &654506080
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -678,6 +644,8 @@ MonoBehaviour:
   moveSpeed: 10
   lookSensitivity: 100
   verticalLookRange: {x: -60, y: 60}
+  canMove: 1
+  canLook: 1
 --- !u!143 &654506082
 CharacterController:
   m_ObjectHideFlags: 0

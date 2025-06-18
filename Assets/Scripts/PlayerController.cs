@@ -1,4 +1,3 @@
-// PlayerController.cs
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -7,7 +6,7 @@ public class PlayerController : MonoBehaviour
     [Header("移動設定")]
     [Tooltip("プレイヤーの移動速度")]
     [SerializeField]
-    private float moveSpeed = 5.0f;
+    private float moveSpeed = 10.0f;
 
     [Header("視点設定")]
     [Tooltip("矢印キーによる視点回転の感度")]
@@ -22,14 +21,11 @@ public class PlayerController : MonoBehaviour
     private float rotationX = 0;
     private float rotationY = 0;
 
-    // --- ▼▼▼ 外部から操作を制御するためのフラグを追加 ▼▼▼ ---
     [HideInInspector]
-    public bool canMove = false; // 移動（WASD, Space, Shift）の許可フラグ
+    public bool canMove = true; // 初期値をtrueに
 
     [HideInInspector]
-    public bool canLook = false; // 視点操作（矢印キー）の許可フラグ
-
-    // --- ▲▲▲ 追加ここまで ▲▲▲ ---
+    public bool canLook = true; // 初期値をtrueに
 
     void Awake()
     {
@@ -41,7 +37,6 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // --- ▼▼▼ フラグによる制御を追加 ▼▼▼ ---
         if (canMove)
         {
             HandleMovement();
@@ -50,29 +45,20 @@ public class PlayerController : MonoBehaviour
         {
             HandleCameraLook();
         }
-        // --- ▲▲▲ 変更点 ▲▲▲ ---
     }
 
     private void HandleMovement()
     {
-        float horizontalInput = Input.GetAxis("Horizontal"); // A/D キー
-        float verticalInput = Input.GetAxis("Vertical"); // W/S キー
-
+        float horizontalInput = Input.GetAxis("Horizontal");
+        float verticalInput = Input.GetAxis("Vertical");
         Vector3 forward = transform.TransformDirection(Vector3.forward);
         Vector3 right = transform.TransformDirection(Vector3.right);
-
         Vector3 moveDirection =
             (forward * verticalInput + right * horizontalInput).normalized * moveSpeed;
-
         if (Input.GetKey(KeyCode.Space))
-        {
             moveDirection.y = moveSpeed;
-        }
         else if (Input.GetKey(KeyCode.LeftShift))
-        {
             moveDirection.y = -moveSpeed;
-        }
-
         characterController.Move(moveDirection * Time.deltaTime);
     }
 
@@ -86,12 +72,9 @@ public class PlayerController : MonoBehaviour
             Input.GetKey(KeyCode.DownArrow) ? 1f
             : Input.GetKey(KeyCode.UpArrow) ? -1f
             : 0f;
-
         rotationY += horizontalLook * lookSensitivity * Time.deltaTime;
         rotationX += verticalLook * lookSensitivity * Time.deltaTime;
-
         rotationX = Mathf.Clamp(rotationX, verticalLookRange.x, verticalLookRange.y);
-
         transform.localRotation = Quaternion.Euler(0, rotationY, 0);
         Camera.main.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
     }

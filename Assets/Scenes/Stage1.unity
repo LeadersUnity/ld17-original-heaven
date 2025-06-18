@@ -320,8 +320,6 @@ GameObject:
   - component: {fileID: 43052574}
   - component: {fileID: 43052573}
   - component: {fileID: 43052575}
-  - component: {fileID: 43052576}
-  - component: {fileID: 43052577}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -415,38 +413,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 64
   m_CollisionDetection: 0
---- !u!114 &43052576
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 43052571}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 05dd1118bda7bab4eadca280ed1fbeea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  bombPrefab: {fileID: 8646833127425538050, guid: d55b8ecca6cdba64bb25afc5eaea778a, type: 3}
-  cameraTransform: {fileID: 963194228}
-  distanceAdjustSpeed: 2
-  minDistance: 2
-  maxDistance: 15
---- !u!114 &43052577
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 43052571}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11873abe4dfba2742a95dcfef5cbd3ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  forceMagnitude: 500
-  forceEffectPrefab: {fileID: 6280281539998945384, guid: f78aaaec3b393e24ca74cd6de8194347, type: 3}
-  forceSound: {fileID: 8300000, guid: 47c41b9182baf7440abdb31018a590f5, type: 3}
 --- !u!1 &44693547
 GameObject:
   m_ObjectHideFlags: 0
