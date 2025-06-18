@@ -33,7 +33,7 @@ public class ConditionTask : TaskBase
             case ConditionType.AvoidRoadContact:
                 return gm.HasContactedRoad;
             case ConditionType.LimitedUsage:
-                return gm.TotalItemsUsed > usageLimit;
+                return gm.TotalItemsUsed >= usageLimit;
             default:
                 return false;
         }
