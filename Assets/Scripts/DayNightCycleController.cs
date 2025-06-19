@@ -9,6 +9,7 @@ public class DayNightCycleController : MonoBehaviour
     [SerializeField]
     [Tooltip("制御するDirectional Light")]
     private Light _sunLight;
+    public Light SunLight => _sunLight; // 外部から参照するためのプロパティ
 
     [Header("カメラ設定")]
     [SerializeField]

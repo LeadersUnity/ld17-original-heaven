@@ -356,7 +356,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 10
-  lookSensitivity: 100
+  lookSensitivity: 150
   verticalLookRange: {x: -60, y: 60}
   canMove: 0
   canLook: 0
