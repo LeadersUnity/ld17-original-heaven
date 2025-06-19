@@ -110,6 +110,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pointLight: {fileID: 9148133916751622922}
   lightBulbRenderer: {fileID: 2340940999795051317}
+  activationRandomness: {x: -0.1, y: 0.1}
 --- !u!1 &7723105314633739133
 GameObject:
   m_ObjectHideFlags: 0

@@ -12,26 +12,29 @@ public class StreetlightController : MonoBehaviour
     [Tooltip("（オプション）電球部分のレンダラー")]
     private Renderer lightBulbRenderer;
 
+    [Header("点灯タイミング設定")]
+    [SerializeField]
+    [Tooltip(
+        "点灯/消灯するタイミングのランダム幅。太陽のY軸がこの範囲内のどこかの値になった時に反応します。例: X=-0.1, Y=0.1"
+    )]
+    private Vector2 activationRandomness = new Vector2(-0.1f, 0.1f);
+
     private Light sunLight;
-    private Material lightBulbMaterial; // 発光マテリアルのインスタンス
-    private bool isNight = false;
+    private Material lightBulbMaterial;
+    private bool isLightOn = false;
+    private float activationThreshold;
 
     void Start()
     {
-        // 自分の子オブジェクトからLightコンポーネントを自動取得
         if (pointLight == null)
         {
             pointLight = GetComponentInChildren<Light>();
         }
-
-        // 発光マテリアルの準備
         if (lightBulbRenderer != null)
         {
-            // マテリアルを複製して、このオブジェクト専用にする
             lightBulbMaterial = lightBulbRenderer.material;
         }
 
-        // シーン内のDayNightCycleControllerを探して、太陽のライトを取得
         DayNightCycleController dayNightController = FindObjectOfType<DayNightCycleController>();
         if (dayNightController != null)
         {
@@ -40,8 +43,20 @@ public class StreetlightController : MonoBehaviour
         else
         {
             Debug.LogWarning("シーンにDayNightCycleControllerが見つかりません。", this);
-            enabled = false; // 太陽が見つからないなら、このスクリプトは動作を停止
+            enabled = false;
+            return;
         }
+
+        activationThreshold = Random.Range(activationRandomness.x, activationRandomness.y);
+
+        // --- ▼▼▼ ここの不等号を > に変更 ▼▼▼ ---
+        // ゲーム開始時の太陽の位置から、本来ライトが点灯しているべきか判定
+        bool shouldBeOnInitially = sunLight.transform.forward.y > activationThreshold;
+        // --- ▲▲▲ 変更ここまで ▲▲▲ ---
+
+        // 判定結果に基づいて、ライトの初期状態と管理フラグを強制的に設定
+        isLightOn = shouldBeOnInitially;
+        ToggleLight(isLightOn);
     }
 
     void Update()
@@ -49,22 +64,19 @@ public class StreetlightController : MonoBehaviour
         if (sunLight == null)
             return;
 
-        // 太陽が地平線の下にあるかどうかで夜を判定
-        // transform.forward.y < 0 は、ライトが下を向いている（＝夜）ことを意味します。
-        // 回転角度(eulerangles)で判定するより、こちらの方法が確実です。
-        bool currentlyNight = sunLight.transform.forward.x < 0;
+        // --- ▼▼▼ ここの不等号を > に変更 ▼▼▼ ---
+        // 太陽のY方向が、このライトに設定されたしきい値を上回ったら「夜」と判定
+        bool shouldBeOn = sunLight.transform.forward.y > activationThreshold;
+        // --- ▲▲▲ 変更ここまで ▲▲▲ ---
 
-        // 夜になった瞬間、または昼になった瞬間に一度だけ処理を実行
-        if (currentlyNight != isNight)
+        // ライトの状態を更新する必要があるかチェック
+        if (shouldBeOn != isLightOn)
         {
-            isNight = currentlyNight;
-            ToggleLight(isNight);
+            isLightOn = shouldBeOn;
+            ToggleLight(isLightOn);
         }
     }
 
-    /// <summary>
-    /// ライトと発光マテリアルのオン/オフを切り替える
-    /// </summary>
     private void ToggleLight(bool enable)
     {
         if (pointLight != null)
@@ -76,12 +88,10 @@ public class StreetlightController : MonoBehaviour
         {
             if (enable)
             {
-                // Emissionを有効にする
                 lightBulbMaterial.EnableKeyword("_EMISSION");
             }
             else
             {
-                // Emissionを無効にする
                 lightBulbMaterial.DisableKeyword("_EMISSION");
             }
         }
